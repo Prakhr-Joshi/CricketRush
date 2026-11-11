@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cricket Rush — Chase Mode</title>
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#07150f">
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="engine-v2/assets/fonts/fonts.css">
+  <link rel="stylesheet" href="game.css?v=6.0">
+</head>
+<body class="app">
+  <div class="stadium-glow stadium-glow-left" aria-hidden="true"></div>
+  <div class="stadium-glow stadium-glow-right" aria-hidden="true"></div>
+
+  <main class="layout">
+    <!-- ================================================================
+         1. HOMEPAGE (Single Primary Action: PLAY CHASE)
+         ================================================================ -->
+    <section class="home-screen" id="home-screen" aria-label="Cricket Rush Home">
+      <header class="top-bar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">🏏</span>
+          <div>
+            <span class="brand-title">Cricket Rush</span>
+            <span class="brand-badge">Chase Edition</span>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="icon-pill-btn" id="btn-home-sound" type="button" title="Toggle Audio">🔊 Sound</button>
+          <button class="icon-pill-btn" id="btn-open-settings" type="button" title="Game Settings">⚙️ Settings</button>
+        </div>
+      </header>
+
+      <div class="home-stage">
+        <article class="feature-card hero-showcase">
+          <p class="card-label">3D Stadium Batting</p>
+          <h1 class="title hero-title">CRICKET RUSH</h1>
+          <p class="hero-subtitle">
+            Step to the crease under floodlights, time your strokes with real 3D ball physics, and hunt down your target before deliveries or wickets run out.
+          </p>
+
+          <div class="hero-cta-wrap">
+            <button class="primary-button play-chase-cta" id="btn-play-chase" type="button">
+              <span>▶ PLAY CHASE</span>
+            </button>
+          </div>
+
+          <div class="home-quick-stats" aria-label="Chase Mode Highlights">
+            <div class="quick-pill">🎯 Custom Targets (1–500)</div>
+            <div class="quick-pill">⚡ Custom Balls (1–300)</div>
+            <div class="quick-pill">🏟️ Live 3D Stadium</div>
+          </div>
+        </article>
+
+        <div class="home-secondary-grid">
+          <article class="feature-card controls-card">
+            <p class="card-label">Batting Controls</p>
+            <div class="controls-list">
+              <div class="control-item">
+                <span>Play Shot / Sprint Run</span>
+                <kbd class="key-badge">Tap / Space</kbd>
+              </div>
+              <div class="control-item">
+                <span>Off-side (Cover Drive / Cut)</span>
+                <kbd class="key-badge">Swipe ← / A / ←</kbd>
+              </div>
+              <div class="control-item">
+                <span>Straight (Lofted / Drive)</span>
+                <kbd class="key-badge">Swipe ↑ / W / ↑</kbd>
+              </div>
+              <div class="control-item">
+                <span>Leg-side (Pull / Flick)</span>
+                <kbd class="key-badge">Swipe → / D / →</kbd>
+              </div>
+              <div class="control-item">
+                <span>Defensive Block</span>
+                <kbd class="key-badge">Swipe ↓ / S / ↓</kbd>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature-card profile-card">
+            <p class="card-label">Your Chase Record</p>
+            <div class="home-stats-summary">
+              <div class="home-stat-box">
+                <strong id="home-stat-matches">0</strong>
+                <span>Chases</span>
+              </div>
+              <div class="home-stat-box">
+                <strong id="home-stat-wins">0</strong>
+                <span>Wins</span>
+              </div>
+              <div class="home-stat-box">
+                <strong id="home-stat-hs">0</strong>
+                <span>High Score</span>
+              </div>
+            </div>
+            <div class="profile-actions">
+              <button class="secondary-button" id="btn-open-career" type="button">📊 Career Stats</button>
+              <button class="secondary-button" id="btn-open-wagon" type="button">🎡 Wagon Wheel</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         2. CHASE SETUP SCREEN
+         ================================================================ -->
+    <section class="setup-screen hidden" id="setup-screen" aria-label="Chase Match Setup">
+      <header class="top-bar">
+        <button class="icon-pill-btn" id="btn-setup-back" type="button">← Home</button>
+        <span class="setup-header-title">CHASE SETUP</span>
+        <button class="icon-pill-btn" id="btn-setup-settings" type="button">⚙️</button>
+      </header>
+
+      <div class="setup-stage">
+        <article class="feature-card setup-card">
+          <div class="setup-head">
+            <div>
+              <p class="card-label">Match Parameters</p>
+              <h2 class="setup-title">Customize Your Chase</h2>
+            </div>
+            <div class="setup-equation-badge" id="setup-equation-badge">
+              <span id="setup-preview-text">50 runs in 30 balls (5.0 ov)</span>
+              <strong id="setup-preview-rrr">RRR 10.00</strong>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="setup-block">
+            <span class="setup-label">QUICK PRESETS</span>
+            <div class="preset-grid" id="preset-grid">
+              <button class="preset-btn" data-preset="easy" data-target="20" data-balls="30" type="button">
+                <span class="preset-name">Easy</span>
+                <span class="preset-meta">20 runs · 30 balls</span>
+              </button>
+              <button class="preset-btn active" data-preset="medium" data-target="50" data-balls="30" type="button">
+                <span class="preset-name">Medium</span>
+                <span class="preset-meta">50 runs · 30 balls</span>
+              </button>
+              <button class="preset-btn" data-preset="hard" data-target="100" data-balls="30" type="button">
+                <span class="preset-name">Hard</span>
+                <span class="preset-meta">100 runs · 30 balls</span>
+              </button>
+              <button class="preset-btn" data-preset="expert" data-target="100" data-balls="12" type="button">
+                <span class="preset-name">Expert</span>
+                <span class="preset-meta">100 runs · 12 balls</span>
+              </button>
+              <button class="preset-btn" data-preset="extreme" data-target="200" data-balls="24" type="button">
+                <span class="preset-name">Extreme</span>
+                <span class="preset-meta">200 runs · 24 balls</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Numeric Inputs -->
+          <div class="setup-inputs-grid">
+            <div class="input-card">
+              <label class="setup-label" for="input-target-runs">TARGET RUNS <span class="range-hint">(1–500)</span></label>
+              <div class="stepper-row">
+                <button class="stepper-btn" id="btn-target-dec" type="button" aria-label="Decrease target runs">-5</button>
+                <input id="input-target-runs" type="number" min="1" max="500" step="1" value="50" inputmode="numeric">
+                <button class="stepper-btn" id="btn-target-inc" type="button" aria-label="Increase target runs">+5</button>
+              </div>
+              <p class="input-error hidden" id="target-error" role="alert"></p>
+            </div>
+
+            <div class="input-card">
+              <label class="setup-label" for="input-available-balls">AVAILABLE BALLS <span class="range-hint">(1–300)</span></label>
+              <div class="stepper-row">
+                <button class="stepper-btn" id="btn-balls-dec" type="button" aria-label="Decrease available balls">-6</button>
+                <input id="input-available-balls" type="number" min="1" max="300" step="1" value="30" inputmode="numeric">
+                <button class="stepper-btn" id="btn-balls-inc" type="button" aria-label="Increase available balls">+6</button>
+              </div>
+              <p class="input-error hidden" id="balls-error" role="alert"></p>
+            </div>
+          </div>
+
+          <!-- Bowling Difficulty -->
+          <div class="setup-options-row">
+            <div class="setup-block">
+              <span class="setup-label">BOWLING DIFFICULTY</span>
+              <div class="setup-pill-row">
+                <button class="setup-pill setup-diff-pill" data-diff="easy" type="button">Easy</button>
+                <button class="setup-pill setup-diff-pill active" data-diff="medium" type="button">Medium</button>
+                <button class="setup-pill setup-diff-pill" data-diff="hard" type="button">Hard</button>
+              </div>
+            </div>
+
+            <div class="setup-block">
+              <span class="setup-label">GRAPHICS QUALITY</span>
+              <div class="setup-pill-row">
+                <button class="setup-pill setting-quality-pill" data-quality="low" type="button">Low (2D)</button>
+                <button class="setup-pill setting-quality-pill active" data-quality="medium" type="button">Medium</button>
+                <button class="setup-pill setting-quality-pill" data-quality="high" type="button">High (3D)</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setup-actions">
+            <button class="primary-button start-chase-btn" id="btn-start-chase" type="button">
+              🏏 START CHASE
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         3. GAMEPLAY SCREEN (Live Scoreboard + 3D Stadium Arena)
+         ================================================================ -->
+    <section class="game-screen hidden" id="game-screen" aria-label="Cricket Rush Match">
+      <div class="celebration-layer" id="celebration-layer" aria-hidden="true"></div>
+
+      <!-- Broadcast Chase Scoreboard Bar -->
+      <header class="chase-hud" id="chase-hud" aria-label="Live Chase Scoreboard">
+        <div class="chase-hud-metrics">
+          <div class="hud-chip hud-chip-score">
+            <span class="hud-lbl">SCORE</span>
+            <strong class="hud-val" id="hud-score">0/0</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">TARGET</span>
+            <strong class="hud-val" id="hud-target">50</strong>
+          </div>
+          <div class="hud-chip hud-chip-need">
+            <span class="hud-lbl">NEED</span>
+            <strong class="hud-val" id="hud-need">50</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">BALLS LEFT</span>
+            <strong class="hud-val" id="hud-balls-left">30</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">WICKETS</span>
+            <strong class="hud-val" id="hud-wickets">0/10</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">CRR</span>
+            <strong class="hud-val" id="hud-crr">0.00</strong>
+          </div>
+          <div class="hud-chip hud-chip-rrr">
+            <span class="hud-lbl">RRR</span>
+            <strong class="hud-val" id="hud-rrr">10.00</strong>
+          </div>
+        </div>
+        <div class="chase-hud-controls">
+          <button class="game-icon-btn" id="btn-hud-sound" type="button" title="Toggle Sound">🔊</button>
+          <button class="game-icon-btn" id="btn-hud-settings" type="button" title="Settings">⚙️</button>
+          <button class="game-icon-btn" id="btn-hud-pause" type="button" title="Pause Match">⏸</button>
+        </div>
+      </header>
+
+      <div class="arena-layout">
+        <div class="arena-shell">
+          <div class="game-container" id="game-container"></div>
+
+          <!-- Shot Feedback Overlay -->
+          <div class="shot-feedback-badge" id="shot-feedback-badge"></div>
+
+          <!-- Live Commentary Ticker Overlay -->
+          <div class="live-commentary-ticker hidden" id="live-commentary-ticker">
+            <span class="comm-mic">🎙️</span>
+            <span class="comm-text" id="live-commentary-text"></span>
+          </div>
+
+          <p class="canvas-controls-hint" id="hud-controls-hint">
+            Tap or Space to hit • Swipe or A/W/D/S &amp; Arrows to pick shot direction
+          </p>
+
+          <!-- Loading Screen Overlay -->
+          <div class="game-loading hidden" id="game-loading">
+            <div class="game-loading-card">
+              <div class="game-loading-spinner" aria-hidden="true"></div>
+              <p class="game-loading-kicker">Chase Mode</p>
+              <h2 class="game-loading-title" id="game-loading-copy">Preparing stadium...</h2>
+              <div class="loading-progress-container">
+                <div class="loading-bar-track">
+                  <div class="loading-bar-fill" id="loading-bar-fill"></div>
+                </div>
+                <div class="loading-bar-status">
+                  <span class="loading-stage-label" id="loading-stage-label">Setting up 3D turf...</span>
+                  <span class="loading-percent-label" id="loading-percent-label">0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         4. MATCH RESULT MODAL (VICTORY / DEFEAT / ALL OUT)
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="result-modal" role="dialog" aria-modal="true" aria-labelledby="res-headline">
+      <div class="custom-modal-card result-modal-card">
+        <div class="result-badge" id="res-badge">VICTORY</div>
+        <div class="custom-modal-icon" id="res-icon">🏆</div>
+        <h2 class="custom-modal-title" id="res-headline">CHASE COMPLETE</h2>
+        <p class="custom-modal-body" id="res-subtitle">You reached the target!</p>
+
+        <div class="result-stats-grid">
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-final-score">0/0</span>
+            <span class="result-stat-lbl">Final Score</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-target">50</span>
+            <span class="result-stat-lbl">Target</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-balls-faced">0 / 30</span>
+            <span class="result-stat-lbl">Balls Faced</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-wickets-lost">0 / 10</span>
+            <span class="result-stat-lbl">Wickets Lost</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-runs-per-ball">0.00</span>
+            <span class="result-stat-lbl">Runs / Ball</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-run-rate">0.00</span>
+            <span class="result-stat-lbl">Run Rate</span>
+          </div>
+        </div>
+
+        <div class="result-ball-log-section">
+          <span class="setup-label">RUNS SCORED PER BALL</span>
+          <div class="result-ball-log" id="res-ball-log"></div>
+        </div>
+
+        <div class="result-actions-stack">
+          <button class="primary-button" id="btn-result-retry" type="button">↻ Retry Chase</button>
+          <div class="result-secondary-row">
+            <button class="secondary-button" id="btn-result-setup" type="button">⚙ Change Setup</button>
+            <button class="secondary-button" id="btn-result-home" type="button">🏠 Return to Home</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         5. PAUSE MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="pause-modal" role="dialog" aria-modal="true" aria-label="Match Paused">
+      <div class="custom-modal-card">
+        <div class="custom-modal-icon">⏸</div>
+        <h2 class="custom-modal-title">MATCH PAUSED</h2>
+        <p class="custom-modal-body" id="pause-equation-copy">Need 50 from 30 balls</p>
+        <div class="pause-menu-actions">
+          <button class="primary-button" id="btn-pause-resume" type="button">▶ Resume Match</button>
+          <button class="secondary-button" id="btn-pause-restart" type="button">↻ Restart Chase</button>
+          <button class="secondary-button" id="btn-pause-setup" type="button">⚙ Change Setup</button>
+          <button class="secondary-button" id="btn-pause-home" type="button">🏠 Return to Home</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         6. SETTINGS MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="settings-modal" role="dialog" aria-modal="true" aria-label="Game Settings">
+      <div class="custom-modal-card">
+        <h2 class="custom-modal-title">⚙️ GAME SETTINGS</h2>
+
+        <div class="settings-row">
+          <span>Audio &amp; Sound Effects</span>
+          <input type="checkbox" id="setting-sound-chk" checked>
+        </div>
+
+        <div class="settings-row">
+          <span>🎙️ Live Voice Commentary</span>
+          <input type="checkbox" id="setting-commentary-chk" checked>
+        </div>
+
+        <div class="settings-row">
+          <span>Haptic Vibration</span>
+          <input type="checkbox" id="setting-vib-chk" checked>
+        </div>
+
+        <div class="setup-group" style="margin-top: 8px;">
+          <span class="setup-label">GRAPHICS QUALITY</span>
+          <div class="setup-pill-row">
+            <button class="setup-pill setting-quality-pill" data-quality="low" type="button">Low (2D)</button>
+            <button class="setup-pill setting-quality-pill active" data-quality="medium" type="button">Medium</button>
+            <button class="setup-pill setting-quality-pill" data-quality="high" type="button">High (3D)</button>
+          </div>
+        </div>
+
+        <div class="setup-group" style="margin-top: 8px;">
+          <span class="setup-label">STADIUM ATMOSPHERE</span>
+          <div class="setup-pill-row">
+            <button class="setup-pill setting-weather-pill active" data-weather="day" type="button">☀️ Day</button>
+            <button class="setup-pill setting-weather-pill" data-weather="overcast" type="button">⛅ Overcast</button>
+            <button class="setup-pill setting-weather-pill" data-weather="night" type="button">🌙 Night</button>
+          </div>
+        </div>
+
+        <div class="custom-modal-actions" style="margin-top: 12px;">
+          <button class="primary-button" id="settings-modal-close" type="button" style="width: 100%;">SAVE &amp; CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         7. CAREER STATS MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="career-modal" role="dialog" aria-modal="true" aria-label="Career Stats">
+      <div class="custom-modal-card">
+        <h2 class="custom-modal-title">📊 CAREER STATS</h2>
+        <div class="career-stats-grid">
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-matches">0</span>
+            <span class="career-stat-lbl">Chases</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-wins">0</span>
+            <span class="career-stat-lbl">Wins</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-runs">0</span>
+            <span class="career-stat-lbl">Total Runs</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-high-score">0</span>
+            <span class="career-stat-lbl">High Score</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-sr">0.0</span>
+            <span class="career-stat-lbl">Strike Rate</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-boundaries">0 4s / 0 6s</span>
+            <span class="career-stat-lbl">Boundaries</span>
+          </div>
+        </div>
+        <div class="custom-modal-actions" style="margin-top: 10px;">
+          <button class="secondary-button" id="btn-reset-career" type="button" style="flex: 1;">Reset</button>
+          <button class="primary-button" id="career-modal-close" type="button" style="flex: 1;">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         8. WAGON WHEEL MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="wagon-wheel-modal" role="dialog" aria-modal="true" aria-label="Wagon Wheel">
+      <div class="custom-modal-card wagon-card">
+        <h2 class="custom-modal-title">🎡 WAGON WHEEL</h2>
+        <p class="custom-modal-body" style="font-size: 0.78rem;">Recent shot spray across the ground</p>
+        <div class="wagon-wheel-container">
+          <canvas id="wagon-wheel-canvas" width="280" height="280"></canvas>
+        </div>
+        <div class="wagon-legend">
+          <span><b style="color: #facc15;">●</b> 1–3 Runs</span>
+          <span><b style="color: #38bdf8;">●</b> 4 (Boundary)</span>
+          <span><b style="color: #e879f9;">●</b> 6 (Sixer)</span>
+        </div>
+        <div class="custom-modal-actions" style="margin-top: 8px;">
+          <button class="primary-button" id="wagon-modal-close" type="button" style="width: 100%;">CLOSE</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="engine-v2/dist/engine.js"></script>
+  <script src="modes/extras.js?v=6.0"></script>
+  <script src="modes/commentary.js?v=6.0"></script>
+  <script type="module" src="game.js?v=6.0"></script>
+</body>
+</html>

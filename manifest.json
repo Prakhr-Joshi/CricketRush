@@ -1,0 +1,24 @@
+{
+  "name": "Cricket Rush — Chase Mode",
+  "short_name": "CricketRush",
+  "description": "3D stadium cricket chase game with real physics, skeletal animations, and customizable target chases.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07150f",
+  "theme_color": "#0b2218",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
