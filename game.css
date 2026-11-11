@@ -677,6 +677,13 @@ input {
   font-weight: 700;
 }
 
+.setup-diff-desc {
+  font-size: 0.76rem;
+  color: rgba(255, 241, 207, 0.74);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
 .setup-actions {
   display: flex;
   justify-content: stretch;
