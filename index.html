@@ -3,1142 +3,476 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cricket Rush — 3D Stadium Cricket Game</title>
+  <title>Cricket Rush — Chase Mode</title>
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#07150f">
   <link rel="stylesheet" href="fonts/fonts.css">
-  <style>
-    :root {
-      --bg-dark: #07150f;
-      --bg-stadium: #0b2218;
-      --card-bg: rgba(14, 38, 28, 0.88);
-      --card-border: rgba(255, 241, 207, 0.16);
-      --gold: #ffcf66;
-      --orange: #ff7b35;
-      --mint: #a7efc1;
-      --cream: #fff1cf;
-      --font-display: "Barlow Semi Condensed", "Arial Black", sans-serif;
-      --font-body: "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: radial-gradient(circle at 50% 0%, #153e2d 0%, var(--bg-dark) 80%);
-      color: var(--cream);
-      font-family: var(--font-body);
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      overflow-x: hidden;
-    }
-
-    /* ── Header ── */
-    .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 20px;
-      background: rgba(5, 14, 10, 0.94);
-      border-bottom: 1px solid var(--card-border);
-      backdrop-filter: blur(10px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .brand-title {
-      font-size: 1.35rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      background: linear-gradient(135deg, var(--gold) 0%, var(--orange) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .brand-badge {
-      background: rgba(167, 239, 193, 0.15);
-      border: 1px solid rgba(167, 239, 193, 0.35);
-      color: var(--mint);
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--card-border);
-      color: var(--cream);
-      padding: 8px 14px;
-      min-height: 44px;
-      border-radius: 10px;
-      font-family: inherit;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-decoration: none;
-    }
-    .btn:hover { background: rgba(255, 255, 255, 0.14); }
-
-    .btn-gold {
-      background: linear-gradient(135deg, var(--gold), #d99e28);
-      color: #07150f;
-      border: none;
-      box-shadow: 0 4px 14px rgba(255, 207, 102, 0.3);
-    }
-    .btn-gold:hover { background: linear-gradient(135deg, #ffe08a, var(--gold)); }
-
-    /* ── Rotate to Landscape Mobile Banner ── */
-    .rotate-prompt {
-      position: fixed;
-      top: 56px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 150;
-      background: rgba(9, 28, 20, 0.94);
-      border: 1px solid var(--gold);
-      border-radius: 999px;
-      padding: 7px 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(8px);
-      font-size: 0.76rem;
-      color: var(--gold);
-      animation: prompt-fade 0.3s ease;
-    }
-    .rotate-prompt button {
-      background: none;
-      border: none;
-      color: var(--cream);
-      font-size: 0.9rem;
-      cursor: pointer;
-      padding: 0 4px;
-    }
-
-    /* ── Main Layout ── */
-    .main-content {
-      flex: 1;
-      max-width: 1240px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 14px 18px 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    /* ── Mode Selection Tabs (Desktop) ── */
-    .mode-tabs {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: thin;
-    }
-
-    .tab-btn {
-      flex: 1;
-      min-width: 155px;
-      background: rgba(14, 38, 28, 0.7);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 9px 12px;
-      min-height: 48px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
-      cursor: pointer;
-      color: var(--cream);
-      transition: all 0.2s ease;
-      text-align: left;
-    }
-    .tab-btn:hover { background: rgba(20, 52, 38, 0.9); }
-    .tab-btn.active {
-      background: linear-gradient(135deg, rgba(255, 123, 53, 0.25) 0%, rgba(14, 38, 28, 0.95) 100%);
-      border-color: var(--gold);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-    }
-    .tab-btn .tab-kicker {
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--mint);
-      font-weight: 700;
-    }
-    .tab-btn .tab-title {
-      font-size: 0.88rem;
-      font-weight: 700;
-    }
-    .tab-btn.active .tab-title { color: var(--gold); }
-
-    /* ── Arena Shell ── */
-    .arena-container {
-      position: relative;
-      width: 100%;
-      height: 720px;
-      max-height: 78vh;
-      border-radius: 18px;
-      overflow: hidden;
-      border: 1px solid var(--card-border);
-      background: #000;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-    }
-
-    .arena-container iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
-
-    /* ── Dynamic Scenario Brief Strip ── */
-    .brief-strip {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 12px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .brief-target {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-    }
-    .brief-target-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--mint);
-      font-weight: 700;
-    }
-    .brief-target-val {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--gold);
-    }
-    .brief-desc {
-      font-size: 0.82rem;
-      color: rgba(255, 241, 207, 0.82);
-      max-width: 500px;
-    }
-
-    /* ── Cards Grid ── */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 14px;
-    }
-
-    .info-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 16px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .info-card h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--gold);
-      border-bottom: 1px solid rgba(255, 241, 207, 0.1);
-      padding-bottom: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .control-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 5px 0;
-      border-bottom: 1px solid rgba(255, 241, 207, 0.05);
-      font-size: 0.82rem;
-    }
-    .control-row:last-child { border-bottom: none; }
-
-    .key-badge {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 241, 207, 0.25);
-      color: var(--cream);
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-family: monospace;
-      font-weight: 700;
-      font-size: 0.74rem;
-    }
-
-    /* ── Wagon Wheel Canvas ── */
-    .wagon-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      position: relative;
-    }
-    #wagonCanvas {
-      width: 240px;
-      height: 240px;
-      border-radius: 50%;
-      background: #113624;
-      border: 2px solid rgba(255, 241, 207, 0.2);
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
-    }
-    .wagon-legend {
-      display: flex;
-      gap: 12px;
-      font-size: 0.7rem;
-    }
-
-    /* ── Stats Mini-Grid ── */
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.82rem;
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255,241,207,0.06);
-    }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-val { font-weight: 700; color: var(--gold); }
-
-    /* ── Slide-Out Drawer Menu ── */
-    .drawer-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      z-index: 200;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-    .drawer-backdrop.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .drawer-panel {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: min(380px, 88vw);
-      background: #091c14;
-      border-left: 1px solid var(--card-border);
-      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
-      z-index: 210;
-      transform: translateX(100%);
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      padding: 20px;
-      gap: 16px;
-    }
-    .drawer-backdrop.open .drawer-panel {
-      transform: translateX(0);
-    }
-
-    .drawer-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 241, 207, 0.12);
-      padding-bottom: 12px;
-    }
-    .drawer-title { font-size: 1.1rem; color: var(--gold); font-weight: 700; }
-    .drawer-close {
-      background: none;
-      border: none;
-      color: var(--cream);
-      font-size: 1.3rem;
-      cursor: pointer;
-      min-width: 44px;
-      min-height: 44px;
-    }
-
-    .select-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .select-label {
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--mint);
-      font-weight: 700;
-    }
-    .pill-selector {
-      display: flex;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 4px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 241, 207, 0.1);
-    }
-    .pill-opt {
-      flex: 1;
-      border: none;
-      background: none;
-      color: var(--cream);
-      padding: 8px;
-      min-height: 40px;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
-    }
-    .pill-opt.active {
-      background: var(--gold);
-      color: #07150f;
-      font-weight: 700;
-    }
-
-    /* ── Mobile Phone Fullscreen Viewport ── */
-    @media (max-width: 768px) {
-      body {
-        overflow: hidden;
-        position: fixed;
-        inset: 0;
-        width: 100vw;
-        height: 100dvh;
-      }
-      .top-bar {
-        padding: 8px 12px;
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 50;
-        background: rgba(5, 14, 10, 0.85);
-      }
-      .main-content {
-        padding: 0;
-        margin: 0;
-        width: 100vw;
-        height: 100dvh;
-        max-width: none;
-      }
-      .mode-tabs,
-      .brief-strip,
-      .cards-grid,
-      footer {
-        display: none !important;
-      }
-      .arena-container {
-        border-radius: 0;
-        border: none;
-        height: 100dvh !important;
-        max-height: 100dvh !important;
-        width: 100vw !important;
-        position: absolute;
-        inset: 0;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="engine-v2/assets/fonts/fonts.css">
+  <link rel="stylesheet" href="game.css?v=6.0">
 </head>
-<body>
+<body class="app">
+  <div class="stadium-glow stadium-glow-left" aria-hidden="true"></div>
+  <div class="stadium-glow stadium-glow-right" aria-hidden="true"></div>
 
-  <!-- Top Navigation Bar -->
-  <header class="top-bar">
-    <div class="brand">
-      <span style="font-size: 1.4rem;">🏏</span>
-      <span class="brand-title">Cricket Rush</span>
-      <span class="brand-badge" id="modeBadge">Chase</span>
-    </div>
-    <div class="top-actions">
-      <button class="btn" id="btnSound" onclick="toggleSound()" title="Toggle Audio">🔊 Sound: ON</button>
-      <button class="btn btn-gold" id="btnShare" onclick="openShare()" title="Share with friends">📤 Share</button>
-      <button class="btn" id="btnMenu" onclick="toggleDrawer(true)">☰ Menu</button>
-    </div>
-  </header>
-
-  <!-- Rotate to Landscape Prompt (Mobile Portrait) -->
-  <div class="rotate-prompt hidden" id="rotatePrompt">
-    <span>🔄 Rotate phone to landscape for full stadium wide view!</span>
-    <button onclick="dismissRotatePrompt()" title="Dismiss">✕</button>
-  </div>
-
-  <!-- Main Content Layout -->
-  <main class="main-content">
-    
-    <!-- Mode Selection Tabs (Desktop / Tablet) -->
-    <nav class="mode-tabs" aria-label="Game Modes">
-      <button class="tab-btn active" onclick="switchMode('chase')" id="tab-chase">
-        <span class="tab-kicker">Scenario Finish</span>
-        <span class="tab-title">⚡ Chase (40 off 15)</span>
-      </button>
-      <button class="tab-btn" onclick="switchMode('superover')" id="tab-superover">
-        <span class="tab-kicker">Maximum Pressure</span>
-        <span class="tab-title">🔥 Super Over</span>
-      </button>
-      <button class="tab-btn" onclick="switchMode('match')" id="tab-match">
-        <span class="tab-kicker">Full Match (AI)</span>
-        <span class="tab-title">🏏 Bat &amp; Bowl</span>
-      </button>
-      <button class="tab-btn" onclick="switchMode('tournament')" id="tab-tournament">
-        <span class="tab-kicker">Championship</span>
-        <span class="tab-title">🏆 Premier Cup</span>
-      </button>
-      <button class="tab-btn" onclick="switchMode('test')" id="tab-test">
-        <span class="tab-kicker">Classic Cricket</span>
-        <span class="tab-title">⚪ Test Match</span>
-      </button>
-      <button class="tab-btn" onclick="switchMode('bowling')" id="tab-bowling">
-        <span class="tab-kicker">Defend Target</span>
-        <span class="tab-title">🎯 Bowling Mode</span>
-      </button>
-      <button class="tab-btn" onclick="switchMode('multiplayer')" id="tab-multiplayer">
-        <span class="tab-kicker">Wi-Fi 1v1</span>
-        <span class="tab-title">🌐 LAN Multiplayer</span>
-      </button>
-      <button class="tab-btn" onclick="switchMode('nets')" id="tab-nets">
-        <span class="tab-kicker">Training Ground</span>
-        <span class="tab-title">🎯 Nets Practice</span>
-      </button>
-    </nav>
-
-    <!-- Stadium Game Arena Frame -->
-    <div class="arena-container" id="arenaContainer">
-      <iframe id="gameFrame" src="game.html?flow=chase&v=5.2" allow="autoplay; fullscreen" title="Cricket Rush 3D Arena"></iframe>
-    </div>
-
-    <!-- Dynamic Scenario Brief Strip -->
-    <section class="brief-strip" id="briefStrip">
-      <div class="brief-target">
-        <span class="brief-target-label">Target Equation:</span>
-        <span class="brief-target-val" id="briefTargetVal">40 off 15</span>
-      </div>
-      <div class="brief-desc" id="briefDescText">
-        Punjab Pulse are 139/0, needing 40 runs from 15 balls to beat Jaipur Jets. RRR: 16.00.
-      </div>
-      <div id="lan-pvp-chips" style="display:none; gap:8px; flex-wrap:wrap; align-items:center;">
-        <span style="font-size:0.65rem; color:#ff7b35; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">?? 1v1 PvP:</span>
-        <button class="chip-btn" onclick="startLanHost()" style="padding:4px 12px; font-size:0.75rem; border-radius:999px; background:linear-gradient(135deg, #ff7b35, #e05318); border:1px solid #ff7b35; color:#fff; cursor:pointer; font-weight:800;">? Host Room</button>
-        <div style="display:flex; gap:4px; align-items:center;">
-          <input type="text" id="portalRoomCodeInput" maxlength="4" placeholder="ROOM CODE" style="width:95px; text-transform:uppercase; font-size:0.75rem; padding:4px 8px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,207,102,0.4); color:#fff; text-align:center; font-weight:800;">
-          <button class="chip-btn" onclick="joinLanWithCode()" style="padding:4px 10px; font-size:0.75rem; border-radius:999px; background:rgba(255,207,102,0.2); border:1px solid var(--gold); color:var(--gold); cursor:pointer; font-weight:800;">Join Code</button>
+  <main class="layout">
+    <!-- ================================================================
+         1. HOMEPAGE (Single Primary Action: PLAY CHASE)
+         ================================================================ -->
+    <section class="home-screen" id="home-screen" aria-label="Cricket Rush Home">
+      <header class="top-bar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">🏏</span>
+          <div>
+            <span class="brand-title">Cricket Rush</span>
+            <span class="brand-badge">Chase Edition</span>
+          </div>
         </div>
-      </div>
-      <div id="bowling-scenario-chips" style="display:none; gap:6px; flex-wrap:wrap; align-items:center;">
-        <span style="font-size:0.65rem; color:var(--mint); font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Scenario:</span>
-        <button class="chip-btn active" onclick="setBowlingScenario(12, 6, 'Defend 12 off 6')" style="padding:4px 10px; font-size:0.75rem; border-radius:999px; background:rgba(255,207,102,0.2); border:1px solid var(--gold); color:var(--gold); cursor:pointer;">⚡ Standard (12)</button>
-        <button class="chip-btn" onclick="setBowlingScenario(6, 6, 'Defend 6 off 6')" style="padding:4px 10px; font-size:0.75rem; border-radius:999px; background:rgba(14,38,28,0.7); border:1px solid var(--card-border); color:var(--cream); cursor:pointer;">🔥 Thriller (6)</button>
-        <button class="chip-btn" onclick="setBowlingScenario(18, 6, 'Defend 18 off 6')" style="padding:4px 10px; font-size:0.75rem; border-radius:999px; background:rgba(14,38,28,0.7); border:1px solid var(--card-border); color:var(--cream); cursor:pointer;">🏏 Pressure (18)</button>
-        <button class="chip-btn" onclick="setBowlingScenario(24, 12, 'Defend 24 off 12')" style="padding:4px 10px; font-size:0.75rem; border-radius:999px; background:rgba(14,38,28,0.7); border:1px solid var(--card-border); color:var(--cream); cursor:pointer;">🏆 2 Overs (24)</button>
-      </div>
-      <div>
-        <button class="btn btn-gold" onclick="reloadCurrentMatch()">🔄 Restart Match</button>
+        <div class="top-actions">
+          <button class="icon-pill-btn" id="btn-home-sound" type="button" title="Toggle Audio">🔊 Sound</button>
+          <button class="icon-pill-btn" id="btn-open-settings" type="button" title="Game Settings">⚙️ Settings</button>
+        </div>
+      </header>
+
+      <div class="home-stage">
+        <article class="feature-card hero-showcase">
+          <p class="card-label">3D Stadium Batting</p>
+          <h1 class="title hero-title">CRICKET RUSH</h1>
+          <p class="hero-subtitle">
+            Step to the crease under floodlights, time your strokes with real 3D ball physics, and hunt down your target before deliveries or wickets run out.
+          </p>
+
+          <div class="hero-cta-wrap">
+            <button class="primary-button play-chase-cta" id="btn-play-chase" type="button">
+              <span>▶ PLAY CHASE</span>
+            </button>
+          </div>
+
+          <div class="home-quick-stats" aria-label="Chase Mode Highlights">
+            <div class="quick-pill">🎯 Custom Targets (1–500)</div>
+            <div class="quick-pill">⚡ Custom Balls (1–300)</div>
+            <div class="quick-pill">🏟️ Live 3D Stadium</div>
+          </div>
+        </article>
+
+        <div class="home-secondary-grid">
+          <article class="feature-card controls-card">
+            <p class="card-label">Batting Controls</p>
+            <div class="controls-list">
+              <div class="control-item">
+                <span>Play Shot / Sprint Run</span>
+                <kbd class="key-badge">Tap / Space</kbd>
+              </div>
+              <div class="control-item">
+                <span>Off-side (Cover Drive / Cut)</span>
+                <kbd class="key-badge">Swipe ← / A / ←</kbd>
+              </div>
+              <div class="control-item">
+                <span>Straight (Lofted / Drive)</span>
+                <kbd class="key-badge">Swipe ↑ / W / ↑</kbd>
+              </div>
+              <div class="control-item">
+                <span>Leg-side (Pull / Flick)</span>
+                <kbd class="key-badge">Swipe → / D / →</kbd>
+              </div>
+              <div class="control-item">
+                <span>Defensive Block</span>
+                <kbd class="key-badge">Swipe ↓ / S / ↓</kbd>
+              </div>
+            </div>
+          </article>
+
+          <article class="feature-card profile-card">
+            <p class="card-label">Your Chase Record</p>
+            <div class="home-stats-summary">
+              <div class="home-stat-box">
+                <strong id="home-stat-matches">0</strong>
+                <span>Chases</span>
+              </div>
+              <div class="home-stat-box">
+                <strong id="home-stat-wins">0</strong>
+                <span>Wins</span>
+              </div>
+              <div class="home-stat-box">
+                <strong id="home-stat-hs">0</strong>
+                <span>High Score</span>
+              </div>
+            </div>
+            <div class="profile-actions">
+              <button class="secondary-button" id="btn-open-career" type="button">📊 Career Stats</button>
+              <button class="secondary-button" id="btn-open-wagon" type="button">🎡 Wagon Wheel</button>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
-    <!-- Cards Grid -->
-    <div class="cards-grid">
-      
-      <!-- Controls & Improved Shot Mechanics Card -->
-      <div class="info-card">
-        <h3>🎮 Directional Shot Mechanics</h3>
-        <div class="control-row">
-          <span>Swipe Left / A / ← Arrow</span>
-          <span class="key-badge">Off-side: Cover Drive &amp; Cut</span>
-        </div>
-        <div class="control-row">
-          <span>Swipe Up / W / ↑ Arrow</span>
-          <span class="key-badge">Straight: Lofted Drive / Hit</span>
-        </div>
-        <div class="control-row">
-          <span>Swipe Right / D / → Arrow</span>
-          <span class="key-badge">Leg-side: Pull, Hook &amp; Flick</span>
-        </div>
-        <div class="control-row">
-          <span>Swipe Down / S / ↓ Arrow</span>
-          <span class="key-badge">Defensive Block / Leave</span>
-        </div>
-        <div class="control-row">
-          <span>Tap Screen / Space</span>
-          <span class="key-badge">Standard Stroke / Sprint Run</span>
-        </div>
-      </div>
+    <!-- ================================================================
+         2. CHASE SETUP SCREEN
+         ================================================================ -->
+    <section class="setup-screen hidden" id="setup-screen" aria-label="Chase Match Setup">
+      <header class="top-bar">
+        <button class="icon-pill-btn" id="btn-setup-back" type="button">← Home</button>
+        <span class="setup-header-title">CHASE SETUP</span>
+        <button class="icon-pill-btn" id="btn-setup-settings" type="button">⚙️</button>
+      </header>
 
-      <!-- Wagon Wheel (Shot Distribution) Card -->
-      <div class="info-card">
-        <h3>📊 360° Wagon Wheel</h3>
-        <div class="wagon-container">
-          <canvas id="wagonCanvas" width="240" height="240"></canvas>
-          <div class="wagon-legend">
-            <span><strong style="color: #ffcf66;">●</strong> 6s</span>
-            <span><strong style="color: #a7efc1;">●</strong> 4s</span>
-            <span><strong style="color: #4da6ff;">●</strong> Runs</span>
-            <span><strong style="color: #ff7b35;">●</strong> Wickets</span>
+      <div class="setup-stage">
+        <article class="feature-card setup-card">
+          <div class="setup-head">
+            <div>
+              <p class="card-label">Match Parameters</p>
+              <h2 class="setup-title">Customize Your Chase</h2>
+            </div>
+            <div class="setup-equation-badge" id="setup-equation-badge">
+              <span id="setup-preview-text">50 runs in 30 balls (5.0 ov)</span>
+              <strong id="setup-preview-rrr">RRR 10.00</strong>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="setup-block">
+            <span class="setup-label">QUICK PRESETS</span>
+            <div class="preset-grid" id="preset-grid">
+              <button class="preset-btn" data-preset="easy" data-target="20" data-balls="30" type="button">
+                <span class="preset-name">Easy</span>
+                <span class="preset-meta">20 runs · 30 balls</span>
+              </button>
+              <button class="preset-btn active" data-preset="medium" data-target="50" data-balls="30" type="button">
+                <span class="preset-name">Medium</span>
+                <span class="preset-meta">50 runs · 30 balls</span>
+              </button>
+              <button class="preset-btn" data-preset="hard" data-target="100" data-balls="30" type="button">
+                <span class="preset-name">Hard</span>
+                <span class="preset-meta">100 runs · 30 balls</span>
+              </button>
+              <button class="preset-btn" data-preset="expert" data-target="100" data-balls="12" type="button">
+                <span class="preset-name">Expert</span>
+                <span class="preset-meta">100 runs · 12 balls</span>
+              </button>
+              <button class="preset-btn" data-preset="extreme" data-target="200" data-balls="24" type="button">
+                <span class="preset-name">Extreme</span>
+                <span class="preset-meta">200 runs · 24 balls</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Numeric Inputs -->
+          <div class="setup-inputs-grid">
+            <div class="input-card">
+              <label class="setup-label" for="input-target-runs">TARGET RUNS <span class="range-hint">(1–500)</span></label>
+              <div class="stepper-row">
+                <button class="stepper-btn" id="btn-target-dec" type="button" aria-label="Decrease target runs">-5</button>
+                <input id="input-target-runs" type="number" min="1" max="500" step="1" value="50" inputmode="numeric">
+                <button class="stepper-btn" id="btn-target-inc" type="button" aria-label="Increase target runs">+5</button>
+              </div>
+              <p class="input-error hidden" id="target-error" role="alert"></p>
+            </div>
+
+            <div class="input-card">
+              <label class="setup-label" for="input-available-balls">AVAILABLE BALLS <span class="range-hint">(1–300)</span></label>
+              <div class="stepper-row">
+                <button class="stepper-btn" id="btn-balls-dec" type="button" aria-label="Decrease available balls">-6</button>
+                <input id="input-available-balls" type="number" min="1" max="300" step="1" value="30" inputmode="numeric">
+                <button class="stepper-btn" id="btn-balls-inc" type="button" aria-label="Increase available balls">+6</button>
+              </div>
+              <p class="input-error hidden" id="balls-error" role="alert"></p>
+            </div>
+          </div>
+
+          <!-- Bowling Difficulty -->
+          <div class="setup-options-row">
+            <div class="setup-block">
+              <span class="setup-label">BOWLING DIFFICULTY</span>
+              <div class="setup-pill-row">
+                <button class="setup-pill setup-diff-pill" data-diff="easy" type="button">Easy</button>
+                <button class="setup-pill setup-diff-pill active" data-diff="medium" type="button">Medium</button>
+                <button class="setup-pill setup-diff-pill" data-diff="hard" type="button">Hard</button>
+              </div>
+            </div>
+
+            <div class="setup-block">
+              <span class="setup-label">GRAPHICS QUALITY</span>
+              <div class="setup-pill-row">
+                <button class="setup-pill setting-quality-pill" data-quality="low" type="button">Low (2D)</button>
+                <button class="setup-pill setting-quality-pill active" data-quality="medium" type="button">Medium</button>
+                <button class="setup-pill setting-quality-pill" data-quality="high" type="button">High (3D)</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setup-actions">
+            <button class="primary-button start-chase-btn" id="btn-start-chase" type="button">
+              🏏 START CHASE
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         3. GAMEPLAY SCREEN (Live Scoreboard + 3D Stadium Arena)
+         ================================================================ -->
+    <section class="game-screen hidden" id="game-screen" aria-label="Cricket Rush Match">
+      <div class="celebration-layer" id="celebration-layer" aria-hidden="true"></div>
+
+      <!-- Broadcast Chase Scoreboard Bar -->
+      <header class="chase-hud" id="chase-hud" aria-label="Live Chase Scoreboard">
+        <div class="chase-hud-metrics">
+          <div class="hud-chip hud-chip-score">
+            <span class="hud-lbl">SCORE</span>
+            <strong class="hud-val" id="hud-score">0/0</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">TARGET</span>
+            <strong class="hud-val" id="hud-target">50</strong>
+          </div>
+          <div class="hud-chip hud-chip-need">
+            <span class="hud-lbl">NEED</span>
+            <strong class="hud-val" id="hud-need">50</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">BALLS LEFT</span>
+            <strong class="hud-val" id="hud-balls-left">30</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">WICKETS</span>
+            <strong class="hud-val" id="hud-wickets">0/10</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">CRR</span>
+            <strong class="hud-val" id="hud-crr">0.00</strong>
+          </div>
+          <div class="hud-chip hud-chip-rrr">
+            <span class="hud-lbl">RRR</span>
+            <strong class="hud-val" id="hud-rrr">10.00</strong>
+          </div>
+        </div>
+        <div class="chase-hud-controls">
+          <button class="game-icon-btn" id="btn-hud-sound" type="button" title="Toggle Sound">🔊</button>
+          <button class="game-icon-btn" id="btn-hud-settings" type="button" title="Settings">⚙️</button>
+          <button class="game-icon-btn" id="btn-hud-pause" type="button" title="Pause Match">⏸</button>
+        </div>
+      </header>
+
+      <div class="arena-layout">
+        <div class="arena-shell">
+          <div class="game-container" id="game-container"></div>
+
+          <!-- Shot Feedback Overlay -->
+          <div class="shot-feedback-badge" id="shot-feedback-badge"></div>
+
+          <!-- Live Commentary Ticker Overlay -->
+          <div class="live-commentary-ticker hidden" id="live-commentary-ticker">
+            <span class="comm-mic">🎙️</span>
+            <span class="comm-text" id="live-commentary-text"></span>
+          </div>
+
+          <p class="canvas-controls-hint" id="hud-controls-hint">
+            Tap or Space to hit • Swipe or A/W/D/S &amp; Arrows to pick shot direction
+          </p>
+
+          <!-- Loading Screen Overlay -->
+          <div class="game-loading hidden" id="game-loading">
+            <div class="game-loading-card">
+              <div class="game-loading-spinner" aria-hidden="true"></div>
+              <p class="game-loading-kicker">Chase Mode</p>
+              <h2 class="game-loading-title" id="game-loading-copy">Preparing stadium...</h2>
+              <div class="loading-progress-container">
+                <div class="loading-bar-track">
+                  <div class="loading-bar-fill" id="loading-bar-fill"></div>
+                </div>
+                <div class="loading-bar-status">
+                  <span class="loading-stage-label" id="loading-stage-label">Setting up 3D turf...</span>
+                  <span class="loading-percent-label" id="loading-percent-label">0%</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Career Stats Snapshot Card -->
-      <div class="info-card">
-        <h3>📈 Career Profile</h3>
-        <div class="stat-row">
-          <span>Matches Played</span>
-          <span class="stat-val" id="portalStatMatches">0</span>
+    <!-- ================================================================
+         4. MATCH RESULT MODAL (VICTORY / DEFEAT / ALL OUT)
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="result-modal" role="dialog" aria-modal="true" aria-labelledby="res-headline">
+      <div class="custom-modal-card result-modal-card">
+        <div class="result-badge" id="res-badge">VICTORY</div>
+        <div class="custom-modal-icon" id="res-icon">🏆</div>
+        <h2 class="custom-modal-title" id="res-headline">CHASE COMPLETE</h2>
+        <p class="custom-modal-body" id="res-subtitle">You reached the target!</p>
+
+        <div class="result-stats-grid">
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-final-score">0/0</span>
+            <span class="result-stat-lbl">Final Score</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-target">50</span>
+            <span class="result-stat-lbl">Target</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-balls-faced">0 / 30</span>
+            <span class="result-stat-lbl">Balls Faced</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-wickets-lost">0 / 10</span>
+            <span class="result-stat-lbl">Wickets Lost</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-runs-per-ball">0.00</span>
+            <span class="result-stat-lbl">Runs / Ball</span>
+          </div>
+          <div class="result-stat-box">
+            <span class="result-stat-val" id="res-run-rate">0.00</span>
+            <span class="result-stat-lbl">Run Rate</span>
+          </div>
         </div>
-        <div class="stat-row">
-          <span>Total Career Runs</span>
-          <span class="stat-val" id="portalStatRuns">0</span>
+
+        <div class="result-ball-log-section">
+          <span class="setup-label">RUNS SCORED PER BALL</span>
+          <div class="result-ball-log" id="res-ball-log"></div>
         </div>
-        <div class="stat-row">
-          <span>Strike Rate</span>
-          <span class="stat-val" id="portalStatSR">0.0</span>
-        </div>
-        <div class="stat-row">
-          <span>High Score</span>
-          <span class="stat-val" id="portalStatHS">0</span>
-        </div>
-        <div class="stat-row">
-          <span>Career Wickets</span>
-          <span class="stat-val" id="portalStatWickets">0</span>
-        </div>
-        <div style="display: flex; gap: 8px; margin-top: 8px;">
-          <button class="btn btn-gold" style="flex: 1;" onclick="openCareerModal()">View Full Card</button>
-          <button class="btn" style="flex: 1;" onclick="resetCareerStats()">Reset Stats</button>
+
+        <div class="result-actions-stack">
+          <button class="primary-button" id="btn-result-retry" type="button">↻ Retry Chase</button>
+          <div class="result-secondary-row">
+            <button class="secondary-button" id="btn-result-setup" type="button">⚙ Change Setup</button>
+            <button class="secondary-button" id="btn-result-home" type="button">🏠 Return to Home</button>
+          </div>
         </div>
       </div>
-
-      <!-- Match Setup & Randomizer Card -->
-      <div class="info-card">
-        <h3>🎲 Custom Scenario Setup</h3>
-        <p style="font-size: 0.78rem; color: rgba(255, 241, 207, 0.7);">
-          Challenge yourself with custom overs and targets or generate an instant random scenario!
-        </p>
-        <div style="display: flex; gap: 8px; margin-top: 6px;">
-          <button class="btn btn-gold" style="flex: 1;" onclick="rollRandomScenario()">🎲 Random Scenario</button>
-          <button class="btn" style="flex: 1;" onclick="toggleDrawer(true)">⚙️ Match Settings</button>
-        </div>
-      </div>
-
     </div>
 
+    <!-- ================================================================
+         5. PAUSE MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="pause-modal" role="dialog" aria-modal="true" aria-label="Match Paused">
+      <div class="custom-modal-card">
+        <div class="custom-modal-icon">⏸</div>
+        <h2 class="custom-modal-title">MATCH PAUSED</h2>
+        <p class="custom-modal-body" id="pause-equation-copy">Need 50 from 30 balls</p>
+        <div class="pause-menu-actions">
+          <button class="primary-button" id="btn-pause-resume" type="button">▶ Resume Match</button>
+          <button class="secondary-button" id="btn-pause-restart" type="button">↻ Restart Chase</button>
+          <button class="secondary-button" id="btn-pause-setup" type="button">⚙ Change Setup</button>
+          <button class="secondary-button" id="btn-pause-home" type="button">🏠 Return to Home</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         6. SETTINGS MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="settings-modal" role="dialog" aria-modal="true" aria-label="Game Settings">
+      <div class="custom-modal-card">
+        <h2 class="custom-modal-title">⚙️ GAME SETTINGS</h2>
+
+        <div class="settings-row">
+          <span>Audio &amp; Sound Effects</span>
+          <input type="checkbox" id="setting-sound-chk" checked>
+        </div>
+
+        <div class="settings-row">
+          <span>🎙️ Live Voice Commentary</span>
+          <input type="checkbox" id="setting-commentary-chk" checked>
+        </div>
+
+        <div class="settings-row">
+          <span>Haptic Vibration</span>
+          <input type="checkbox" id="setting-vib-chk" checked>
+        </div>
+
+        <div class="setup-group" style="margin-top: 8px;">
+          <span class="setup-label">GRAPHICS QUALITY</span>
+          <div class="setup-pill-row">
+            <button class="setup-pill setting-quality-pill" data-quality="low" type="button">Low (2D)</button>
+            <button class="setup-pill setting-quality-pill active" data-quality="medium" type="button">Medium</button>
+            <button class="setup-pill setting-quality-pill" data-quality="high" type="button">High (3D)</button>
+          </div>
+        </div>
+
+        <div class="setup-group" style="margin-top: 8px;">
+          <span class="setup-label">STADIUM ATMOSPHERE</span>
+          <div class="setup-pill-row">
+            <button class="setup-pill setting-weather-pill active" data-weather="day" type="button">☀️ Day</button>
+            <button class="setup-pill setting-weather-pill" data-weather="overcast" type="button">⛅ Overcast</button>
+            <button class="setup-pill setting-weather-pill" data-weather="night" type="button">🌙 Night</button>
+          </div>
+        </div>
+
+        <div class="custom-modal-actions" style="margin-top: 12px;">
+          <button class="primary-button" id="settings-modal-close" type="button" style="width: 100%;">SAVE &amp; CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         7. CAREER STATS MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="career-modal" role="dialog" aria-modal="true" aria-label="Career Stats">
+      <div class="custom-modal-card">
+        <h2 class="custom-modal-title">📊 CAREER STATS</h2>
+        <div class="career-stats-grid">
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-matches">0</span>
+            <span class="career-stat-lbl">Chases</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-wins">0</span>
+            <span class="career-stat-lbl">Wins</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-runs">0</span>
+            <span class="career-stat-lbl">Total Runs</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-high-score">0</span>
+            <span class="career-stat-lbl">High Score</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-sr">0.0</span>
+            <span class="career-stat-lbl">Strike Rate</span>
+          </div>
+          <div class="career-stat-card">
+            <span class="career-stat-val" id="stat-boundaries">0 4s / 0 6s</span>
+            <span class="career-stat-lbl">Boundaries</span>
+          </div>
+        </div>
+        <div class="custom-modal-actions" style="margin-top: 10px;">
+          <button class="secondary-button" id="btn-reset-career" type="button" style="flex: 1;">Reset</button>
+          <button class="primary-button" id="career-modal-close" type="button" style="flex: 1;">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         8. WAGON WHEEL MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="wagon-wheel-modal" role="dialog" aria-modal="true" aria-label="Wagon Wheel">
+      <div class="custom-modal-card wagon-card">
+        <h2 class="custom-modal-title">🎡 WAGON WHEEL</h2>
+        <p class="custom-modal-body" style="font-size: 0.78rem;">Recent shot spray across the ground</p>
+        <div class="wagon-wheel-container">
+          <canvas id="wagon-wheel-canvas" width="280" height="280"></canvas>
+        </div>
+        <div class="wagon-legend">
+          <span><b style="color: #facc15;">●</b> 1–3 Runs</span>
+          <span><b style="color: #38bdf8;">●</b> 4 (Boundary)</span>
+          <span><b style="color: #e879f9;">●</b> 6 (Sixer)</span>
+        </div>
+        <div class="custom-modal-actions" style="margin-top: 8px;">
+          <button class="primary-button" id="wagon-modal-close" type="button" style="width: 100%;">CLOSE</button>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <!-- Slide-Out Drawer (Mobile & Custom Settings) -->
-  <div class="drawer-backdrop" id="drawerBackdrop" onclick="handleBackdropClick(event)">
-    <aside class="drawer-panel" id="drawerPanel">
-      <div class="drawer-head">
-        <span class="drawer-title">🏏 Game Menu</span>
-        <button class="drawer-close" onclick="toggleDrawer(false)">✕</button>
-      </div>
-
-      <!-- Modes in Drawer -->
-      <div class="select-group">
-        <label class="select-label">Select Mode</label>
-        <button class="btn" onclick="switchMode('chase'); toggleDrawer(false);">⚡ Death-Over Chase (40 off 15)</button>
-        <button class="btn" onclick="switchMode('superover'); toggleDrawer(false);">🔥 Super Over (6 Balls)</button>
-        <button class="btn" onclick="switchMode('match'); toggleDrawer(false);">🏏 Full Match (Bat &amp; Bowl vs AI)</button>
-        <button class="btn" onclick="switchMode('tournament'); toggleDrawer(false);">🏆 Premier Cup (8-Team Knockout)</button>
-        <button class="btn" onclick="switchMode('test'); toggleDrawer(false);">⚪ Test Match (Multi-day Sessions)</button>
-        <button class="btn" onclick="switchMode('bowling'); toggleDrawer(false);">🎯 Bowling Mode (Defend Scenarios)</button>
-        <button class="btn" onclick="switchMode('multiplayer'); toggleDrawer(false);">🌐 LAN Multiplayer (1v1 Turn-Based)</button>
-        <button class="btn" onclick="switchMode('nets'); toggleDrawer(false);">🎯 Practice Nets</button>
-      </div>
-
-      <!-- Difficulty Selector -->
-      <div class="select-group">
-        <label class="select-label">Bowling Difficulty</label>
-        <div class="pill-selector">
-          <button class="pill-opt" id="diff-easy" onclick="setDifficulty('easy')">Easy</button>
-          <button class="pill-opt active" id="diff-medium" onclick="setDifficulty('medium')">Medium</button>
-          <button class="pill-opt" id="diff-hard" onclick="setDifficulty('hard')">Hard</button>
-        </div>
-      </div>
-
-      <!-- Graphics Quality Selector -->
-      <div class="select-group">
-        <label class="select-label">Graphics Quality</label>
-        <div class="pill-selector">
-          <button class="pill-opt" id="gfx-low" onclick="setGraphics('low')">Low (2D)</button>
-          <button class="pill-opt active" id="gfx-medium" onclick="setGraphics('medium')">Medium</button>
-          <button class="pill-opt" id="gfx-high" onclick="setGraphics('high')">High (3D)</button>
-        </div>
-      </div>
-
-      <!-- Custom Match Setup -->
-      <div class="select-group">
-        <label class="select-label">Custom Target &amp; Overs</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="number" id="customTargetInput" value="36" min="10" max="250" style="width: 50%; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); color: #fff;" placeholder="Target">
-          <select id="customOversInput" style="width: 50%; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); color: #fff;">
-            <option value="6">1 Over (6 balls)</option>
-            <option value="12">2 Overs (12 balls)</option>
-            <option value="15" selected>2.5 Overs (15 balls)</option>
-            <option value="30">5 Overs (30 balls)</option>
-          </select>
-        </div>
-        <button class="btn btn-gold" style="margin-top: 6px;" onclick="startCustomMatch()">Launch Custom Match</button>
-      </div>
-
-      <!-- Share Action -->
-      <div class="select-group" style="margin-top: 10px;">
-        <button class="btn btn-gold" onclick="openShare()" style="width: 100%; justify-content: center;">📤 Share Challenge With Friends</button>
-      </div>
-
-      <!-- PWA Install Button -->
-      <div class="select-group" id="pwaInstallGroup" style="display: none;">
-        <button class="btn" id="btnPwaInstall" style="width: 100%; justify-content: center;">📲 Install App (Home Screen)</button>
-      </div>
-
-    </aside>
-  </div>
-
-  <script>
-    let currentMode = 'chase';
-    let soundEnabled = true;
-    let currentDifficulty = localStorage.getItem('cricket-rush:difficulty') || 'medium';
-    let currentGraphics = localStorage.getItem('cricket-rush:graphics-quality') || 'medium';
-    let wagonShots = [];
-
-    // Initialize UI states
-    document.addEventListener('DOMContentLoaded', () => {
-      initOrientationCheck();
-      updatePillSelectors();
-      drawWagonWheel();
-      updatePortalStats();
-      registerPWA();
-
-      // Check URL parameters for direct mode launch (e.g., ?flow=bowling, ?flow=match, ?flow=test, or ?room=CRIC)
-      const params = new URLSearchParams(window.location.search);
-      const flow = params.get('flow');
-      if (flow === 'bowling') {
-        switchMode('bowling');
-      } else if (flow === 'match') {
-        switchMode('match');
-      } else if (flow === 'test') {
-        switchMode('test');
-      } else if (flow === 'multiplayer' || params.get('lan') === '1' || params.get('room')) {
-        switchMode('multiplayer');
-      } else if (flow === 'super-over') {
-        switchMode('superover');
-      } else if (flow === 'tournament') {
-        switchMode('tournament');
-      } else if (flow === 'ghost') {
-        const target = params.get('target') || '45';
-        const balls = params.get('balls') || '12';
-        switchMode('custom', `flow=custom&target=${target}&balls=${balls}`);
-      } else if (flow === 'nets') {
-        switchMode('nets');
-      }
-    });
-
-    // ── Orientation Check & Prompt ──
-    function initOrientationCheck() {
-      const check = () => {
-        const isPortrait = window.innerHeight > window.innerWidth;
-        const isMobile = window.innerWidth <= 768;
-        const prompt = document.getElementById('rotatePrompt');
-        if (isMobile && isPortrait && !sessionStorage.getItem('dismiss_rotate_prompt')) {
-          prompt.classList.remove('hidden');
-        } else {
-          prompt.classList.add('hidden');
-        }
-      };
-      window.addEventListener('resize', check);
-      window.addEventListener('orientationchange', check);
-      check();
-    }
-
-    function dismissRotatePrompt() {
-      document.getElementById('rotatePrompt').classList.add('hidden');
-      sessionStorage.setItem('dismiss_rotate_prompt', '1');
-    }
-
-    // ── Bowling Scenario Picker ──
-    function setBowlingScenario(target, balls, label) {
-      document.querySelectorAll('#bowling-scenario-chips .chip-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent.includes(`(${target})`));
-        if (btn.classList.contains('active')) {
-          btn.style.background = 'rgba(255,207,102,0.2)';
-          btn.style.borderColor = 'var(--gold)';
-          btn.style.color = 'var(--gold)';
-        } else {
-          btn.style.background = 'rgba(14,38,28,0.7)';
-          btn.style.borderColor = 'var(--card-border)';
-          btn.style.color = 'var(--cream)';
-        }
-      });
-      document.getElementById('briefTargetVal').textContent = label;
-      const iframe = document.getElementById('gameFrame');
-      if (iframe) {
-        iframe.src = `game.html?flow=bowling&target=${target}&balls=${balls}&difficulty=${currentDifficulty}&quality=${currentGraphics}`;
-      }
-    }
-
-    // ── Mode Switching with Dynamic Text ──
-    function switchMode(mode, customParams = '') {
-      currentMode = mode;
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      const activeTab = document.getElementById('tab-' + mode);
-      if (activeTab) activeTab.classList.add('active');
-
-      const badge = document.getElementById('modeBadge');
-      const targetVal = document.getElementById('briefTargetVal');
-      const descText = document.getElementById('briefDescText');
-      const iframe = document.getElementById('gameFrame');
-
-      let url = 'game.html';
-      wagonShots = [];
-      drawWagonWheel();
-
-      if (mode === 'chase') {
-        badge.textContent = 'Chase';
-        targetVal.textContent = '40 off 15';
-        descText.textContent = 'Punjab Pulse are 139/0, needing 40 runs from 15 balls to beat Jaipur Jets. RRR: 16.00.';
-        url = 'game.html?flow=chase&v=5.2';
-      } else if (mode === 'superover') {
-        badge.textContent = 'Super Over';
-        targetVal.textContent = '19 off 6';
-        descText.textContent = 'Super Over Thriller! Need 19 runs from 6 deliveries with 2 wickets in hand. Maximum power!';
-        url = 'game.html?flow=super-over&v=5.2';
-      } else if (mode === 'match') {
-        badge.textContent = 'Full Match';
-        targetVal.textContent = '2-Innings Match';
-        descText.textContent = 'Complete Match vs AI: 3D Coin Toss, user both Bats & Bowls, bowler rotation, free hits & full scorecard!';
-        url = 'game.html?flow=match&v=5.2';
-      } else if (mode === 'tournament') {
-        badge.textContent = 'Premier Cup';
-        targetVal.textContent = '8-Team Knockout';
-        descText.textContent = 'Premier Cup Championship: 8-Team knockout tree (QF → SF → Final). Lead your franchise to trophy glory!';
-        url = 'game.html?flow=tournament&v=5.2';
-      } else if (mode === 'test') {
-        badge.textContent = 'Test Match';
-        targetVal.textContent = '4 Innings / Sessions';
-        descText.textContent = 'Classic Multi-Day Test Cricket: 30-over sessions (Lunch, Tea, Stumps), Declaration, Follow-on & Quick Sim AI.';
-        url = 'game.html?flow=test&v=5.2';
-      } else if (mode === 'bowling') {
-        badge.textContent = 'Bowling';
-        targetVal.textContent = 'Defend 12 off 6';
-        descText.textContent = 'Bowling Defense: Defend target totals against AI batter! Pick pace/spin, line and length, and time your release meter.';
-        url = 'game.html?flow=bowling&v=5.2';
-      } else if (mode === 'multiplayer') {
-        badge.textContent = '1v1 LAN';
-        targetVal.textContent = '1v1 Wi-Fi Match';
-        descText.textContent = 'LAN 1v1 Multiplayer: Turn-based match with a friend over local Wi-Fi. Toss ceremony, dynamic targets & real match settings!';
-        const searchParams = new URLSearchParams(window.location.search);
-        const room = searchParams.get('room') || '';
-        url = 'game.html?flow=multiplayer' + (room ? `&room=${room}` : '');
-      } else if (mode === 'nets') {
-        badge.textContent = 'Nets Training';
-        targetVal.textContent = 'Practice';
-        descText.textContent = 'Batting Practice Nets: Unlimited deliveries against Pace & Spin. Hone your timing, stance and shot placement.';
-        url = 'game.html?flow=nets&v=5.2';
-      } else if (mode === 'custom') {
-        badge.textContent = 'Custom';
-        url = 'game.html?' + customParams;
-      }
-
-      const scenarioChips = document.getElementById('bowling-scenario-chips');
-      if (scenarioChips) scenarioChips.style.display = mode === 'bowling' ? 'flex' : 'none';
-      const pvpChips = document.getElementById('lan-pvp-chips');
-      if (pvpChips) pvpChips.style.display = mode === 'multiplayer' ? 'flex' : 'none';
-
-      // Append difficulty and graphics parameters
-      url += (url.includes('?') ? '&' : '?') + `difficulty=${currentDifficulty}&quality=${currentGraphics}`;
-      if (iframe) iframe.src = url;
-    }
-
-    function startLanHost() {
-      const iframe = document.getElementById('gameFrame');
-      if (iframe) iframe.src = 'game.html?flow=multiplayer&tab=host&v=5.2';
-    }
-    function joinLanWithCode() {
-      const code = (document.getElementById('portalRoomCodeInput')?.value || '').trim().toUpperCase();
-      const iframe = document.getElementById('gameFrame');
-      if (iframe) iframe.src = 'game.html?flow=multiplayer&room=' + encodeURIComponent(code) + '&v=5.2';
-    }
-
-    function reloadCurrentMatch() {
-      const iframe = document.getElementById('gameFrame');
-      if (iframe) iframe.src = iframe.src;
-    }
-
-    // ── Sound Toggle ──
-    function toggleSound() {
-      soundEnabled = !soundEnabled;
-      const btn = document.getElementById('btnSound');
-      btn.textContent = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: MUTED';
-      try {
-        localStorage.setItem('cricket-rush:sound-muted', soundEnabled ? '0' : '1');
-        const iframe = document.getElementById('gameFrame');
-        if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage({ type: 'toggle-sound', muted: !soundEnabled }, '*');
-        }
-      } catch (e) {}
-    }
-
-    // ── Difficulty & Graphics ──
-    function setDifficulty(diff) {
-      currentDifficulty = diff;
-      localStorage.setItem('cricket-rush:difficulty', diff);
-      updatePillSelectors();
-      const iframe = document.getElementById('gameFrame');
-      if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({ type: 'set-difficulty', difficulty: diff }, '*');
-      }
-    }
-
-    function setGraphics(gfx) {
-      currentGraphics = gfx;
-      localStorage.setItem('cricket-rush:graphics-quality', gfx);
-      updatePillSelectors();
-      switchMode(currentMode);
-    }
-
-    function updatePillSelectors() {
-      document.querySelectorAll('#diff-easy, #diff-medium, #diff-hard').forEach(b => b.classList.remove('active'));
-      const activeDiff = document.getElementById('diff-' + currentDifficulty);
-      if (activeDiff) activeDiff.classList.add('active');
-
-      document.querySelectorAll('#gfx-low, #gfx-medium, #gfx-high').forEach(b => b.classList.remove('active'));
-      const activeGfx = document.getElementById('gfx-' + currentGraphics);
-      if (activeGfx) activeGfx.classList.add('active');
-    }
-
-    // ── Custom & Random Scenario Setup ──
-    function startCustomMatch() {
-      const target = parseInt(document.getElementById('customTargetInput').value, 10) || 36;
-      const balls = parseInt(document.getElementById('customOversInput').value, 10) || 15;
-      const params = `flow=custom&target=${target}&balls=${balls}`;
-      document.getElementById('briefTargetVal').textContent = `${target} off ${balls}`;
-      document.getElementById('briefDescText').textContent = `Custom Challenge: Score ${target} runs in ${balls} balls!`;
-      toggleDrawer(false);
-      switchMode('custom', params);
-    }
-
-    function rollRandomScenario() {
-      const randomBalls = [6, 12, 15, 18, 24][Math.floor(Math.random() * 5)];
-      const randomRRR = 12 + Math.random() * 8;
-      const randomTarget = Math.round((randomBalls / 6) * randomRRR);
-      const teams = ['punjab-pulse', 'jaipur-jets', 'chennai-blasters', 'mumbai-waves', 'delhi-dynamos'];
-      const bat = teams[Math.floor(Math.random() * teams.length)];
-      let bowl = teams[Math.floor(Math.random() * teams.length)];
-      if (bowl === bat) bowl = 'jaipur-jets';
-
-      const params = `flow=custom&target=${randomTarget}&balls=${randomBalls}&bat=${bat}&bowl=${bowl}`;
-      document.getElementById('briefTargetVal').textContent = `${randomTarget} off ${randomBalls}`;
-      document.getElementById('briefDescText').textContent = `Random Match: Need ${randomTarget} runs off ${randomBalls} balls!`;
-      switchMode('custom', params);
-    }
-
-    // ── Drawer Menu ──
-    function toggleDrawer(open) {
-      const backdrop = document.getElementById('drawerBackdrop');
-      if (open) backdrop.classList.add('open');
-      else backdrop.classList.remove('open');
-    }
-    function handleBackdropClick(e) {
-      if (e.target.id === 'drawerBackdrop') toggleDrawer(false);
-    }
-
-    // ── Career Profile Display ──
-    function updatePortalStats() {
-      try {
-        const raw = localStorage.getItem('cricket-rush:career-stats') || localStorage.getItem('cricket_rush_career_stats');
-        const s = raw ? JSON.parse(raw) : {};
-        const matches = s.matchesPlayed || 0;
-        const runs = s.runsScored ?? s.totalRuns ?? 0;
-        const balls = s.ballsFaced || 0;
-        const hs = s.highScore ?? s.highestScore ?? 0;
-        const wkts = s.wicketsTaken || 0;
-        document.getElementById('portalStatMatches').textContent = matches;
-        document.getElementById('portalStatRuns').textContent = runs;
-        const sr = balls > 0 ? ((runs / balls) * 100).toFixed(1) : '0.0';
-        document.getElementById('portalStatSR').textContent = sr;
-        document.getElementById('portalStatHS').textContent = hs;
-        document.getElementById('portalStatWickets').textContent = wkts;
-      } catch (e) {}
-    }
-
-    function resetCareerStats() {
-      if (confirm('Are you sure you want to reset your career statistics?')) {
-        localStorage.removeItem('cricket-rush:career-stats');
-        localStorage.removeItem('cricket_rush_career_stats');
-        updatePortalStats();
-      }
-    }
-
-    function openCareerModal() {
-      const iframe = document.getElementById('gameFrame');
-      if (iframe && iframe.contentWindow && iframe.contentWindow.careerStats) {
-        iframe.contentWindow.careerStats.openModal();
-      } else {
-        alert('Career Stats: View detailed wagon wheel and innings summary inside the match frame!');
-      }
-    }
-
-    // ── 360° Wagon Wheel Canvas ──
-    function drawWagonWheel() {
-      const canvas = document.getElementById('wagonCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-      const cx = w / 2;
-      const cy = h / 2;
-      const r = w * 0.44;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Boundary Oval
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = '#174a32';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 241, 207, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // 30-yard inner circle
-      ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.52, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 241, 207, 0.18)';
-      ctx.setLineDash([4, 4]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Pitch strip
-      ctx.fillStyle = '#c7a368';
-      ctx.fillRect(cx - 3, cy - 14, 6, 28);
-
-      // Draw shots
-      wagonShots.forEach(shot => {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + 4);
-        const endX = cx + Math.cos(shot.angle) * shot.dist;
-        const endY = cy + Math.sin(shot.angle) * shot.dist;
-        ctx.lineTo(endX, endY);
-        ctx.strokeStyle = shot.color;
-        ctx.lineWidth = shot.runs >= 4 ? 2.5 : 1.5;
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(endX, endY, shot.runs === 6 ? 4 : 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = shot.color;
-        ctx.fill();
-      });
-    }
-
-    function recordWagonShot(runs, isWicket) {
-      const canvas = document.getElementById('wagonCanvas');
-      if (!canvas) return;
-      const r = canvas.width * 0.44;
-
-      let angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.5;
-      let dist = r * (0.35 + Math.random() * 0.6);
-      let color = '#4da6ff';
-
-      if (runs === 6) {
-        dist = r * 0.98;
-        color = '#ffcf66';
-      } else if (runs === 4) {
-        dist = r * 0.88;
-        color = '#a7efc1';
-      } else if (isWicket) {
-        dist = r * 0.45;
-        color = '#ff7b35';
-      }
-
-      wagonShots.push({ runs, isWicket, angle, dist, color });
-      drawWagonWheel();
-      updatePortalStats();
-    }
-
-    // ── Listen to Game Messages ──
-    window.addEventListener('message', e => {
-      if (!e.data) return;
-      if (e.data.type === 'boundary-hit') {
-        recordWagonShot(e.data.runs, false);
-      } else if (e.data.type === 'wicket-fallen') {
-        recordWagonShot(0, true);
-      } else if (e.data.type === 'ball-completed') {
-        recordWagonShot(e.data.runsThisBall, false);
-      }
-    });
-
-    // ── Web Share API ──
-    async function openShare() {
-      const shareUrl = window.location.href;
-      const shareText = `🏏 Play Cricket Rush! Test your skills across Full Match, Test Cricket, Bowling Defense and 1v1 LAN:`;
-
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: 'Cricket Rush Challenge',
-            text: shareText,
-            url: shareUrl
-          });
-        } catch (err) {}
-      } else {
-        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
-        window.open(whatsappUrl, '_blank');
-      }
-    }
-
-    // ── PWA Service Worker Registration ──
-    function registerPWA() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-          console.log('[PWA] Service Worker registered with scope:', reg.scope);
-        }).catch(err => {
-          console.warn('[PWA] Service Worker registration failed:', err);
-        });
-      }
-
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', e => {
-        e.preventDefault();
-        deferredPrompt = e;
-        const group = document.getElementById('pwaInstallGroup');
-        if (group) group.style.display = 'block';
-        document.getElementById('btnPwaInstall')?.addEventListener('click', () => {
-          group.style.display = 'none';
-          deferredPrompt.prompt();
-        });
-      });
-    }
-  </script>
+  <script src="engine-v2/dist/engine.js"></script>
+  <script src="modes/extras.js?v=6.0"></script>
+  <script src="modes/commentary.js?v=6.0"></script>
+  <script type="module" src="game.js?v=6.0"></script>
 </body>
 </html>

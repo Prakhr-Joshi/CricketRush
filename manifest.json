@@ -1,7 +1,7 @@
 {
-  "name": "Cricket Rush — 3D Stadium Cricket",
+  "name": "Cricket Rush — Chase Mode",
   "short_name": "CricketRush",
-  "description": "Browser-based 3D cricket game with real physics, skeletal animations, bowling defense, Test match sessions and 1v1 LAN multiplayer.",
+  "description": "3D stadium cricket chase game with real physics, skeletal animations, and customizable target chases.",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "any",
@@ -19,28 +19,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Full Match",
-      "url": "./index.html?flow=match",
-      "description": "Play a complete 2-innings match (batting & bowling) against AI"
-    },
-    {
-      "name": "Test Match",
-      "url": "./index.html?flow=test",
-      "description": "Play classic multi-day Test cricket with sessions and declaration"
-    },
-    {
-      "name": "Bowling Mode",
-      "url": "./index.html?flow=bowling",
-      "description": "Defend target totals with precision line, length and release"
-    },
-    {
-      "name": "LAN 1v1 Multiplayer",
-      "url": "./index.html?flow=multiplayer",
-      "description": "Play head-to-head with a friend over local Wi-Fi"
     }
   ]
 }

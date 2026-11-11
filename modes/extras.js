@@ -1,20 +1,31 @@
 // ============================================================================
-// MODES/EXTRAS.JS - Career Stats, Wagon Wheel, Settings, Pause & Sharing
+// MODES/EXTRAS.JS - Chase Career Stats, Wagon Wheel, Settings & Confetti VFX
 // ============================================================================
 
 class CareerStatsTracker {
   constructor() {
     this.key = "cricket_rush_career_stats";
     this.stats = this.loadStats();
-    this.recentShots = []; // For Wagon Wheel
+    this.recentShots = [];
     this.initUI();
   }
 
   loadStats() {
     try {
       const raw = localStorage.getItem(this.key);
-      if (raw) return JSON.parse(raw);
-    } catch(e) {}
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          matchesPlayed: Number(parsed.matchesPlayed) || 0,
+          matchesWon: Number(parsed.matchesWon) || 0,
+          runsScored: Number(parsed.runsScored) || 0,
+          ballsFaced: Number(parsed.ballsFaced) || 0,
+          fours: Number(parsed.fours) || 0,
+          sixes: Number(parsed.sixes) || 0,
+          highScore: Number(parsed.highScore) || 0
+        };
+      }
+    } catch (e) {}
     return {
       matchesPlayed: 0,
       matchesWon: 0,
@@ -22,45 +33,48 @@ class CareerStatsTracker {
       ballsFaced: 0,
       fours: 0,
       sixes: 0,
-      wicketsTaken: 0,
-      oversBowled: 0,
-      runsConceded: 0,
-      highScore: 0,
-      bestBowling: { wkts: 0, runs: 999 }
+      highScore: 0
     };
   }
 
   saveStats() {
     try {
-      this.stats.totalRuns = this.stats.runsScored;
-      this.stats.highestScore = this.stats.highScore;
       const str = JSON.stringify(this.stats);
       localStorage.setItem(this.key, str);
       localStorage.setItem("cricket-rush:career-stats", str);
-    } catch(e) {}
+    } catch (e) {}
   }
 
-  recordMatch({ mode, won, runs, wickets, overs = 1, conceded = 0 }) {
+  recordMatch({ won, runs, balls }) {
     this.stats.matchesPlayed += 1;
     if (won) this.stats.matchesWon += 1;
-    this.stats.runsScored += runs || 0;
-    if (runs > this.stats.highScore) this.stats.highScore = runs;
-    this.stats.wicketsTaken += wickets || 0;
-    this.stats.oversBowled += overs;
-    this.stats.runsConceded += conceded;
-
-    if (wickets > this.stats.bestBowling.wkts || (wickets === this.stats.bestBowling.wkts && conceded < this.stats.bestBowling.runs)) {
-      this.stats.bestBowling = { wkts: wickets, runs: conceded };
-    }
+    const safeRuns = Math.max(0, Number(runs) || 0);
+    const safeBalls = Math.max(0, Number(balls) || 0);
+    this.stats.runsScored += safeRuns;
+    this.stats.ballsFaced += safeBalls;
+    if (safeRuns > this.stats.highScore) this.stats.highScore = safeRuns;
     this.saveStats();
   }
 
   recordShot(shot) {
-    // { angle: radians/degrees, runs: 0..6, dist: meters }
     this.recentShots.push(shot);
-    if (this.recentShots.length > 50) this.recentShots.shift();
+    if (this.recentShots.length > 60) this.recentShots.shift();
     if (shot.runs === 4) this.stats.fours += 1;
     if (shot.runs === 6) this.stats.sixes += 1;
+    this.saveStats();
+  }
+
+  resetStats() {
+    this.stats = {
+      matchesPlayed: 0,
+      matchesWon: 0,
+      runsScored: 0,
+      ballsFaced: 0,
+      fours: 0,
+      sixes: 0,
+      highScore: 0
+    };
+    this.recentShots = [];
     this.saveStats();
   }
 
@@ -95,8 +109,6 @@ class CareerStatsTracker {
     setEl("stat-sr", strikeRate);
     setEl("stat-high-score", st.highScore);
     setEl("stat-boundaries", `${st.fours} 4s / ${st.sixes} 6s`);
-    setEl("stat-wickets", st.wicketsTaken);
-    setEl("stat-best-bowling", st.bestBowling.wkts > 0 ? `${st.bestBowling.wkts}/${st.bestBowling.runs}` : "-");
   }
 
   showWagonWheel() {
@@ -117,40 +129,39 @@ class CareerStatsTracker {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Draw Oval Ground
     ctx.fillStyle = "#164e32";
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
 
-    // Boundary Rope
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.strokeStyle = "rgba(255, 241, 207, 0.45)";
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 30-Yard Circle
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+    ctx.strokeStyle = "rgba(255, 241, 207, 0.2)";
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Pitch
     ctx.fillStyle = "#c2a675";
     ctx.fillRect(cx - 5, cy - 22, 10, 44);
 
-    // Draw Shot Lines
-    const shots = this.recentShots.length > 0 ? this.recentShots : [
-      { angle: -45, runs: 4 }, { angle: -30, runs: 6 }, { angle: 10, runs: 1 },
-      { angle: 60, runs: 4 }, { angle: 120, runs: 2 }, { angle: -110, runs: 6 }
-    ];
+    if (this.recentShots.length === 0) {
+      ctx.fillStyle = "rgba(255, 241, 207, 0.65)";
+      ctx.font = "600 12px Barlow, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Play shots in Chase to plot wagon wheel", cx, cy + 44);
+      return;
+    }
 
-    shots.forEach(s => {
-      const rad = (s.angle - 90) * (Math.PI / 180);
-      const shotDist = s.runs === 6 ? r * 0.98 : s.runs === 4 ? r * 0.88 : (r * 0.4 + (s.runs * 14));
+    this.recentShots.forEach(s => {
+      if (s.runs <= 0) return;
+      const rad = ((s.angle || 0) - 90) * (Math.PI / 180);
+      const shotDist = s.runs === 6 ? r * 0.98 : s.runs === 4 ? r * 0.88 : r * 0.38 + s.runs * 14;
       const endX = cx + Math.cos(rad) * shotDist;
       const endY = cy + Math.sin(rad) * shotDist;
 
@@ -159,18 +170,17 @@ class CareerStatsTracker {
       ctx.lineTo(endX, endY);
 
       if (s.runs === 6) {
-        ctx.strokeStyle = "#e879f9"; // Purple/Pink
+        ctx.strokeStyle = "#e879f9";
         ctx.lineWidth = 3;
       } else if (s.runs === 4) {
-        ctx.strokeStyle = "#38bdf8"; // Blue
+        ctx.strokeStyle = "#38bdf8";
         ctx.lineWidth = 2.5;
       } else {
-        ctx.strokeStyle = "#facc15"; // Yellow
+        ctx.strokeStyle = "#facc15";
         ctx.lineWidth = 1.5;
       }
       ctx.stroke();
 
-      // Dot at landing spot
       ctx.fillStyle = ctx.strokeStyle;
       ctx.beginPath();
       ctx.arc(endX, endY, s.runs >= 4 ? 4 : 2.5, 0, Math.PI * 2);
@@ -188,34 +198,50 @@ class SettingsManager {
   }
 
   load() {
+    let soundMuted = false;
+    try {
+      soundMuted = localStorage.getItem("cricket-rush:sound-muted") === "1";
+    } catch (e) {}
+
     try {
       const raw = localStorage.getItem(this.key);
-      if (raw) return JSON.parse(raw);
-    } catch(e) {}
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          soundEnabled: !soundMuted && parsed.soundEnabled !== false,
+          graphicsQuality: localStorage.getItem("cricket-rush:graphics-quality") || parsed.graphicsQuality || "medium",
+          vibration: parsed.vibration !== false,
+          weather: parsed.weather || "day"
+        };
+      }
+    } catch (e) {}
+
     return {
-      soundEnabled: true,
-      graphicsQuality: "medium", // low, medium, high
+      soundEnabled: !soundMuted,
+      graphicsQuality: localStorage.getItem("cricket-rush:graphics-quality") || "medium",
       vibration: true,
-      weather: "day", // day, overcast, night
-      controls: "tap" // tap, swipe
+      weather: "day"
     };
   }
 
   save() {
     try {
       localStorage.setItem(this.key, JSON.stringify(this.settings));
-    } catch(e) {}
+      localStorage.setItem("cricket-rush:sound-muted", this.settings.soundEnabled ? "0" : "1");
+      localStorage.setItem("cricket-rush:graphics-quality", this.settings.graphicsQuality || "medium");
+    } catch (e) {}
   }
 
   initUI() {
     document.getElementById("btn-open-settings")?.addEventListener("click", () => {
+      this.syncUI();
       document.getElementById("settings-modal")?.classList.remove("hidden");
     });
+
     document.getElementById("settings-modal-close")?.addEventListener("click", () => {
       document.getElementById("settings-modal")?.classList.add("hidden");
     });
 
-    // Sound toggle
     const soundChk = document.getElementById("setting-sound-chk");
     if (soundChk) {
       soundChk.checked = this.settings.soundEnabled;
@@ -226,31 +252,24 @@ class SettingsManager {
       });
     }
 
-    // Quality pills
-    document.querySelectorAll(".setting-quality-pill")?.forEach(pill => {
-      if (pill.dataset.quality === this.settings.graphicsQuality) pill.classList.add("active");
+    document.querySelectorAll(".setting-quality-pill").forEach(pill => {
       pill.addEventListener("click", () => {
-        document.querySelectorAll(".setting-quality-pill").forEach(p => p.classList.remove("active"));
-        pill.classList.add("active");
-        this.settings.graphicsQuality = pill.dataset.quality;
+        this.settings.graphicsQuality = pill.dataset.quality || "medium";
         this.save();
+        this.syncUI();
+        this.applySettings(true);
+      });
+    });
+
+    document.querySelectorAll(".setting-weather-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        this.settings.weather = pill.dataset.weather || "day";
+        this.save();
+        this.syncUI();
         this.applySettings();
       });
     });
 
-    // Weather atmosphere pills
-    document.querySelectorAll(".setting-weather-pill")?.forEach(pill => {
-      if (pill.dataset.weather === (this.settings.weather || "day")) pill.classList.add("active");
-      pill.addEventListener("click", () => {
-        document.querySelectorAll(".setting-weather-pill").forEach(p => p.classList.remove("active"));
-        pill.classList.add("active");
-        this.settings.weather = pill.dataset.weather;
-        this.save();
-        this.applySettings();
-      });
-    });
-
-    // Vibration toggle
     const vibChk = document.getElementById("setting-vib-chk");
     if (vibChk) {
       vibChk.checked = this.settings.vibration;
@@ -259,16 +278,34 @@ class SettingsManager {
         this.save();
       });
     }
+
+    this.syncUI();
   }
 
-  applySettings() {
-    const game = window.s;
-    if (game) {
-      if (typeof game.setAudioEnabled === "function") {
-        game.setAudioEnabled(this.settings.soundEnabled);
-      }
-    }
+  syncUI() {
+    const soundChk = document.getElementById("setting-sound-chk");
+    if (soundChk) soundChk.checked = this.settings.soundEnabled;
 
+    const vibChk = document.getElementById("setting-vib-chk");
+    if (vibChk) vibChk.checked = this.settings.vibration;
+
+    document.querySelectorAll(".setting-quality-pill").forEach(pill => {
+      pill.classList.toggle("active", pill.dataset.quality === this.settings.graphicsQuality);
+    });
+
+    document.querySelectorAll(".setting-weather-pill").forEach(pill => {
+      pill.classList.toggle("active", pill.dataset.weather === (this.settings.weather || "day"));
+    });
+  }
+
+  setSoundEnabled(enabled) {
+    this.settings.soundEnabled = Boolean(enabled);
+    this.save();
+    this.syncUI();
+    this.applySettings();
+  }
+
+  applySettings(qualityChanged = false) {
     const container = document.getElementById("game-container");
     if (container) {
       const weather = this.settings.weather || "day";
@@ -280,62 +317,17 @@ class SettingsManager {
         container.style.filter = "none";
       }
     }
+
+    if (typeof window.onChaseSettingsChanged === "function") {
+      window.onChaseSettingsChanged(this.settings, qualityChanged);
+    }
   }
 }
 
-class PauseManager {
-  constructor() {
-    this.isPaused = false;
-    this.initUI();
-  }
-
-  initUI() {
-    document.getElementById("btn-hud-pause")?.addEventListener("click", () => this.togglePause());
-    document.getElementById("btn-pause-resume")?.addEventListener("click", () => this.togglePause());
-    document.getElementById("btn-pause-restart")?.addEventListener("click", () => {
-      this.togglePause();
-      if (window.re) window.re();
-    });
-    document.getElementById("btn-pause-menu")?.addEventListener("click", () => {
-      this.togglePause();
-      if (window.Pt) window.Pt();
-    });
-
-    window.addEventListener("keydown", e => {
-      if (e.code === "Escape") {
-        const modalVisible = document.querySelector(".modal-backdrop:not(.hidden)");
-        if (!modalVisible) this.togglePause();
-      }
-    });
-  }
-
-  togglePause() {
-    this.isPaused = !this.isPaused;
-    const modal = document.getElementById("pause-modal");
-    if (modal) modal.classList.toggle("hidden", !this.isPaused);
-  }
-}
-
-// Global instances
 window.careerStats = new CareerStatsTracker();
 window.settingsManager = new SettingsManager();
-window.pauseManager = new PauseManager();
 
-// Web Share API Helper
-window.shareScore = function(title, text) {
-  if (navigator.share) {
-    navigator.share({ title: title || "Cricket Rush", text: text }).catch(() => {});
-  } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => {
-      if (window.showShotFeedback) window.showShotFeedback("📋 SCORE COPIED TO CLIPBOARD!", "hit");
-    });
-  }
-};
-
-// ============================================================================
-// STADIUM CELEBRATION CONFETTI VFX
-// ============================================================================
-window.triggerConfetti = function(colors = ['#ffcf66', '#ff7b35', '#22c55e', '#38bdf8', '#ec4899', '#ffffff']) {
+window.triggerConfetti = function(colors = ["#ffcf66", "#ff7b35", "#22c55e", "#38bdf8", "#ec4899", "#ffffff"]) {
   try {
     let canvas = document.getElementById("vfx-confetti-canvas");
     if (!canvas) {
@@ -351,13 +343,11 @@ window.triggerConfetti = function(colors = ['#ffcf66', '#ff7b35', '#22c55e', '#3
     }
 
     const ctx = canvas.getContext("2d");
-    const width = canvas.width = window.innerWidth;
-    const height = canvas.height = window.innerHeight;
+    const width = (canvas.width = window.innerWidth);
+    const height = (canvas.height = window.innerHeight);
 
     const particles = [];
-    const count = 75;
-
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 75; i++) {
       particles.push({
         x: width * 0.5 + (Math.random() - 0.5) * 200,
         y: height * 0.35 + (Math.random() - 0.5) * 100,
@@ -372,18 +362,17 @@ window.triggerConfetti = function(colors = ['#ffcf66', '#ff7b35', '#22c55e', '#3
       });
     }
 
-    let animId = null;
     const tick = () => {
       ctx.clearRect(0, 0, width, height);
       let alive = 0;
 
-      for (let p of particles) {
+      for (const p of particles) {
         if (p.life <= 0) continue;
         alive++;
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.35; // gravity
-        p.vx *= 0.98; // drag
+        p.vy += 0.35;
+        p.vx *= 0.98;
         p.rotation += p.rotSpeed;
         p.life -= p.decay;
 
@@ -397,29 +386,13 @@ window.triggerConfetti = function(colors = ['#ffcf66', '#ff7b35', '#22c55e', '#3
       }
 
       if (alive > 0) {
-        animId = requestAnimationFrame(tick);
-      } else {
-        ctx.clearRect(0, 0, width, height);
-        if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+        requestAnimationFrame(tick);
+      } else if (canvas.parentNode) {
+        canvas.parentNode.removeChild(canvas);
       }
     };
-    animId = requestAnimationFrame(tick);
-  } catch(e) {
+    requestAnimationFrame(tick);
+  } catch (e) {
     console.warn("Confetti effect failed:", e);
   }
-};
-
-
-// ============================================================================
-// ASYNCHRONOUS GHOST CHALLENGE SHARING
-// ============================================================================
-window.generateGhostChallengeLink = function({ score = 36, balls = 12, wickets = 2, team = "punjab-pulse" } = {}) {
-  const base = window.location.origin + window.location.pathname.replace("game.html", "index.html");
-  const url = new URL(base);
-  url.searchParams.set("flow", "ghost");
-  url.searchParams.set("target", (score + 1).toString());
-  url.searchParams.set("balls", balls.toString());
-  url.searchParams.set("wickets", wickets.toString());
-  url.searchParams.set("team", team);
-  return url.toString();
 };

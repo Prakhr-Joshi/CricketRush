@@ -1,24 +1,15 @@
-// Cricket Rush Service Worker - Offline Cache v4
-const CACHE_NAME = 'cricket-rush-v5.2-live';
+// Cricket Rush Service Worker - Chase Edition
+const CACHE_NAME = 'cricket-rush-chase-v6.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './game.html',
   './game.js',
   './game.css',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './modes/toss.js',
-  './modes/bowling.js',
-  './modes/match.js',
-  './modes/lan.js',
-  './modes/test.js',
   './modes/extras.js',
-  './modes/tournament.js',
   './modes/commentary.js',
-  './modes/drs.js',
-  './scripts/mock-api.js',
   './engine-v2/dist/engine.js',
   './engine-v2/assets/characters/cricketer-lowpoly.glb',
   './engine-v2/assets/characters/cricketer-lowpoly.rig.json',
@@ -30,10 +21,7 @@ const STATIC_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[ServiceWorker] Caching app shell & modular modes v3');
-      return cache.addAll(STATIC_ASSETS).catch(err => {
-        console.warn('[ServiceWorker] Some assets failed to cache:', err);
-      });
+      return cache.addAll(STATIC_ASSETS).catch(() => {});
     })
   );
   self.skipWaiting();
@@ -43,10 +31,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => {
-          console.log('[ServiceWorker] Deleting old cache:', k);
-          return caches.delete(k);
-        })
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       );
     })
   );
@@ -55,13 +40,10 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-
-  // Bypass API and LAN requests to network (never cache LAN actions or polling events)
-  if (url.pathname.includes('/api/') || url.pathname.includes('/lan/')) {
+  if (url.pathname.includes('/api/')) {
     return;
   }
 
-  // Network-First strategy: always fetch latest code from server, fallback to cache offline
   event.respondWith(
     fetch(event.request)
       .then(networkResponse => {
@@ -73,8 +55,6 @@ self.addEventListener('fetch', event => {
         }
         return networkResponse;
       })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+      .catch(() => caches.match(event.request))
   );
 });

@@ -23,30 +23,24 @@ class CommentaryEngine {
         "Beautiful strokeplay! Beats the fielder and hits the rope for four!"
       ],
       wicket: [
-        "Gone! Clean bowled, middle stump is knocked back!",
-        "In the air and taken! A crucial breakthrough for the fielding side!",
-        "Edged and straight into the keeper's gloves! He's out!",
-        "What a dismissal! Stunner in the field, wicket falls!"
+        "Gone! The fielding side strikes at a crucial moment!",
+        "In the air and taken! A huge breakthrough in the chase!",
+        "What a dismissal! That wicket puts real pressure on the batting side!"
       ],
       dot: [
-        "Beaten for pace! Excellent dot ball under pressure.",
-        "Good tight line, straight to the fielder for no run.",
-        "Swing and a miss! Stifling bowling outside off stump."
-      ],
-      wide: [
-        "Wayward delivery down the leg side, umpire signals wide.",
-        "Slipped outside the tramlines, that's an extra run."
-      ],
-      perfectDelivery: [
-        "Pinpoint accuracy! Searing delivery right on the stumps!",
-        "Right in the blockhole! Unplayable length from the bowler."
+        "Beaten! Tight delivery and no run scored.",
+        "Good tight line, straight to the fielder for a dot ball.",
+        "Pressure building with a crucial dot ball!"
       ],
       win: [
-        "And that is the match! What an exhilarating victory in Cricket Rush!",
-        "Sealed with authority! The celebrations have begun on the field!"
+        "Target chased down! What an exhilarating victory in Cricket Rush!",
+        "Sealed with authority! The batting side completes the chase!"
       ],
-      tournamentWin: [
-        "Champions of the Premier Cup! An unforgettable tournament triumph for the franchise!"
+      loss: [
+        "So close, yet just short! The bowling side holds its nerve to defend the target."
+      ],
+      allOut: [
+        "All out! The bowling attack wraps up the innings before the target."
       ]
     };
 
@@ -59,10 +53,9 @@ class CommentaryEngine {
     const loadVoices = () => {
       const voices = this.synth.getVoices();
       if (!voices || voices.length === 0) return;
-
-      // Prefer English sportscaster voices: en-GB, en-IN, en-AU, en-US
-      const preferred = voices.find(v => v.lang.includes("en-GB") || v.lang.includes("en-IN") || v.lang.includes("en-AU"))
-        || voices.find(v => v.lang.startsWith("en"));
+      const preferred =
+        voices.find(v => v.lang.includes("en-GB") || v.lang.includes("en-IN") || v.lang.includes("en-AU")) ||
+        voices.find(v => v.lang.startsWith("en"));
       this.selectedVoice = preferred || voices[0];
     };
 
@@ -73,44 +66,50 @@ class CommentaryEngine {
   }
 
   initUI() {
-    // Commentary setting toggle in settings modal
+    const saved = localStorage.getItem("cricket-rush:voice-commentary");
+    if (saved !== null) {
+      this.enabled = saved === "1";
+    }
+
     const chk = document.getElementById("setting-commentary-chk");
     if (chk) {
       chk.checked = this.enabled;
       chk.addEventListener("change", e => {
         this.enabled = e.target.checked;
         localStorage.setItem("cricket-rush:voice-commentary", this.enabled ? "1" : "0");
+        if (!this.enabled && this.synth) {
+          try { this.synth.cancel(); } catch (err) {}
+        }
       });
-    }
-
-    const saved = localStorage.getItem("cricket-rush:voice-commentary");
-    if (saved !== null) {
-      this.enabled = saved === "1";
     }
   }
 
-  /**
-   * Speak commentary text and display live TV ticker
-   */
+  isMuted() {
+    try {
+      return localStorage.getItem("cricket-rush:sound-muted") === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
   say(eventType, customText = "") {
     const list = this.lines[eventType];
     const text = customText || (list ? list[Math.floor(Math.random() * list.length)] : "");
     if (!text) return;
 
-    // 1. Show live TV ticker subtitles on screen
     this.displayTicker(text, eventType);
 
-    // 2. Synthesize stadium crowd cheer
+    if (this.isMuted()) return;
+
     this.playCrowdCheer(eventType);
 
-    // 3. Synthesize speech voice
     if (!this.enabled || !this.synth) return;
 
     try {
-      this.synth.cancel(); // Don't queue up long speech delays
+      this.synth.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       if (this.selectedVoice) utter.voice = this.selectedVoice;
-      utter.rate = 1.06; // Energetic commentary pace
+      utter.rate = 1.06;
       utter.pitch = 1.02;
       utter.volume = 0.85;
       this.synth.speak(utter);
@@ -118,7 +117,7 @@ class CommentaryEngine {
   }
 
   playCrowdCheer(eventType) {
-    if (!this.enabled) return;
+    if (!this.enabled || this.isMuted()) return;
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
@@ -127,15 +126,15 @@ class CommentaryEngine {
       if (ctx.state === "suspended") ctx.resume().catch(() => {});
 
       const now = ctx.currentTime;
-      if (eventType === "six" || eventType === "four" || eventType === "win" || eventType === "tournamentWin") {
-        const duration = eventType === "six" || eventType === "win" ? 2.0 : 1.3;
+      if (eventType === "six" || eventType === "four" || eventType === "win") {
+        const duration = eventType === "six" || eventType === "win" ? 1.8 : 1.1;
         const bufferSize = Math.floor(ctx.sampleRate * duration);
         const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const data = buffer.getChannelData(0);
         let lastOut = 0.0;
         for (let i = 0; i < bufferSize; i++) {
           const white = Math.random() * 2 - 1;
-          data[i] = (lastOut + (0.02 * white)) / 1.02;
+          data[i] = (lastOut + 0.02 * white) / 1.02;
           lastOut = data[i];
           data[i] *= 3.0;
         }
@@ -156,20 +155,20 @@ class CommentaryEngine {
         gain.connect(ctx.destination);
         noise.start(now);
         noise.stop(now + duration);
-      } else if (eventType === "wicket") {
+      } else if (eventType === "wicket" || eventType === "allOut") {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sawtooth";
         osc.frequency.setValueAtTime(180, now);
-        osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
-        gain.gain.setValueAtTime(0.24, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.28);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.28);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.3);
+        osc.stop(now + 0.28);
       }
-    } catch(e) {}
+    } catch (e) {}
   }
 
   displayTicker(text, eventType) {
@@ -184,7 +183,13 @@ class CommentaryEngine {
     clearTimeout(this.tickerTimer);
     this.tickerTimer = setTimeout(() => {
       ticker.classList.add("hidden");
-    }, 4500);
+    }, 4000);
+  }
+
+  hideTicker() {
+    clearTimeout(this.tickerTimer);
+    const ticker = document.getElementById("live-commentary-ticker");
+    if (ticker) ticker.classList.add("hidden");
   }
 }
 
