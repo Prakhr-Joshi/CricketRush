@@ -51,14 +51,14 @@ const LEAGUE_TEAMS = [
       { name: "Aryaveer Sanghal", role: "batter" },
       { name: "Rudransh Bhende", role: "batter", bats: "left" },
       { name: "Devraj Jhalani", role: "wk-batter" },
-      { name: "Sholto Pemberton", role: "all-rounder", canBowl: true, bowlerType: 1, bats: "left", arm: "left" },
       { name: "Kelston Ainsdale", role: "batter", bats: "left" },
       { name: "Trevon Lockridge", role: "wk-batter" },
-      { name: "Hemang Karkhanis", role: "all-rounder", canBowl: true, bowlerType: 1 },
-      { name: "Rylan Ashgrove", role: "bowler", canBowl: true, bowlerType: 0, arm: "left" },
-      { name: "Tushit Bhanushali", role: "bowler", canBowl: true, bowlerType: 0 },
-      { name: "Braylon Wexley", role: "bowler", canBowl: true, bowlerType: 0 },
-      { name: "Bhavesh Ganjapure", role: "bowler", canBowl: true, bowlerType: 0 }
+      { name: "Rylan Ashgrove", role: "bowler", canBowl: true, bowlerType: 0, archetype: 1, arm: "left" },
+      { name: "Hemang Karkhanis", role: "all-rounder", canBowl: true, bowlerType: 1, archetype: 3 },
+      { name: "Braylon Wexley", role: "bowler", canBowl: true, bowlerType: 0, archetype: 0 },
+      { name: "Sholto Pemberton", role: "all-rounder", canBowl: true, bowlerType: 1, archetype: 4, bats: "left", arm: "left" },
+      { name: "Tushit Bhanushali", role: "bowler", canBowl: true, bowlerType: 0, archetype: 2 },
+      { name: "Bhavesh Ganjapure", role: "bowler", canBowl: true, bowlerType: 0, archetype: 0 }
     ]
   },
   {
@@ -73,11 +73,11 @@ const LEAGUE_TEAMS = [
       { name: "Rupert Kirkbride", role: "batter", bats: "left" },
       { name: "Ojas Sabnis", role: "all-rounder" },
       { name: "Piers Ashcombe", role: "wk-batter" },
-      { name: "Miles Ockenden", role: "all-rounder", canBowl: true, bowlerType: 0, arm: "left" },
-      { name: "Ketan Phadnis", role: "all-rounder", canBowl: true, bowlerType: 1, bats: "left", arm: "left" },
-      { name: "Devarsh Nagvekar", role: "bowler", canBowl: true, bowlerType: 1 },
-      { name: "Stefan Bergstrand", role: "bowler", canBowl: true, bowlerType: 0 },
-      { name: "Ishvar Bhandal", role: "bowler", canBowl: true, bowlerType: 0 }
+      { name: "Miles Ockenden", role: "all-rounder", canBowl: true, bowlerType: 0, archetype: 1, arm: "left" },
+      { name: "Ketan Phadnis", role: "all-rounder", canBowl: true, bowlerType: 1, archetype: 3, bats: "left", arm: "left" },
+      { name: "Stefan Bergstrand", role: "bowler", canBowl: true, bowlerType: 0, archetype: 0 },
+      { name: "Devarsh Nagvekar", role: "bowler", canBowl: true, bowlerType: 1, archetype: 4 },
+      { name: "Ishvar Bhandal", role: "bowler", canBowl: true, bowlerType: 0, archetype: 2 }
     ]
   },
   {
@@ -89,14 +89,14 @@ const LEAGUE_TEAMS = [
       { name: "Marten Veldhuis", role: "wk-batter" },
       { name: "Aatish Bhorwade", role: "batter", bats: "left" },
       { name: "Sujal Ghatpande", role: "batter" },
-      { name: "Nirvaan Kotecha", role: "all-rounder", canBowl: true, bowlerType: 0 },
       { name: "Everett Tunbridge", role: "batter", bats: "left" },
-      { name: "Grayson Delafield", role: "all-rounder", canBowl: true, bowlerType: 0 },
-      { name: "Tanmay Kolhatkar", role: "all-rounder", canBowl: true, bowlerType: 1, bats: "left" },
-      { name: "Aniruth Bavdhan", role: "bowler", canBowl: true, bowlerType: 0, arm: "left" },
-      { name: "Pritesh Gurjale", role: "bowler", canBowl: true, bowlerType: 0 },
-      { name: "Julian Ravensdale", role: "bowler", canBowl: true, bowlerType: 1 },
-      { name: "Vivaan Rasquinha", role: "bowler", canBowl: true, bowlerType: 0 }
+      { name: "Nirvaan Kotecha", role: "all-rounder", canBowl: true, bowlerType: 0, archetype: 1 },
+      { name: "Tanmay Kolhatkar", role: "all-rounder", canBowl: true, bowlerType: 1, archetype: 3, bats: "left" },
+      { name: "Aniruth Bavdhan", role: "bowler", canBowl: true, bowlerType: 0, archetype: 0, arm: "left" },
+      { name: "Julian Ravensdale", role: "bowler", canBowl: true, bowlerType: 1, archetype: 4 },
+      { name: "Grayson Delafield", role: "all-rounder", canBowl: true, bowlerType: 0, archetype: 2 },
+      { name: "Pritesh Gurjale", role: "bowler", canBowl: true, bowlerType: 0, archetype: 0 },
+      { name: "Vivaan Rasquinha", role: "bowler", canBowl: true, bowlerType: 0, archetype: 1 }
     ]
   }
 ];
@@ -151,6 +151,8 @@ let activeConfig = {
 };
 
 let ballLog = [];
+let deliveryTelemetry = [];
+let bowlingAI = null;
 let lastLegalBalls = 0;
 let lastScore = 0;
 let lastWickets = 0;
@@ -416,6 +418,12 @@ function adjustNumericInput(inputEl, delta, min, max) {
   validateSetupInputs();
 }
 
+const DIFFICULTY_DESCRIPTIONS = {
+  easy: "Predictable lines & medium pace, gentler swing/spin, wider timing window, and occasional loose balls.",
+  medium: "Balanced pace, swing & spin mix with sensible tactical variations and moderate adaptation.",
+  hard: "Disciplined line & length, full arsenal (yorkers, bouncers, slower balls, variable swing, flighted & faster spin) that adapts to your shots."
+};
+
 function syncOptionPills() {
   document.querySelectorAll(".setup-diff-pill").forEach(pill => {
     pill.classList.toggle("active", pill.dataset.diff === selectedDifficulty);
@@ -423,6 +431,10 @@ function syncOptionPills() {
   document.querySelectorAll(".setting-quality-pill").forEach(pill => {
     pill.classList.toggle("active", pill.dataset.quality === selectedQuality);
   });
+  const descEl = document.getElementById("setup-diff-desc");
+  if (descEl) {
+    descEl.textContent = DIFFICULTY_DESCRIPTIONS[selectedDifficulty] || DIFFICULTY_DESCRIPTIONS.medium;
+  }
 }
 
 // ── Loading Progress UI ──
@@ -480,6 +492,8 @@ function destroyActiveGame() {
 
   gameContainer.replaceChildren();
   ballLog = [];
+  deliveryTelemetry = [];
+  bowlingAI = null;
   lastLegalBalls = 0;
   lastScore = 0;
   lastWickets = 0;
@@ -496,6 +510,7 @@ function toEngineTeam(team) {
       role: p.role,
       canBowl: p.canBowl,
       bowlerType: p.bowlerType,
+      archetype: p.archetype,
       bats: p.bats,
       arm: p.arm
     }))
@@ -647,6 +662,17 @@ async function startChaseMatch(config) {
         : selectedDifficulty === "hard"
         ? Engine.PlayerSkillLevel.PRO
         : Engine.PlayerSkillLevel.CLUB;
+
+    if (typeof window.BowlingAI2 === "function") {
+      bowlingAI = new window.BowlingAI2({
+        difficulty: selectedDifficulty,
+        onDelivery: info => {
+          deliveryTelemetry.push(info);
+          if (deliveryTelemetry.length > 350) deliveryTelemetry.shift();
+        }
+      });
+      bowlingAI.attachToEngine(instance);
+    }
 
     instance.startInnings({
       type: Engine.InningsType.CHALLENGE,
@@ -1045,7 +1071,9 @@ window.__CRICKET_RUSH__ = {
   isMatchEnded: () => matchEnded,
   getEngineState: () => gameInstance?.getDemoState?.() || null,
   getEngineSituation: () => gameInstance?.match?.getMatchSituation?.() || null,
-  getTimingDebug: () => gameInstance?.getPitchDebugInfo?.() || null
+  getTimingDebug: () => gameInstance?.getPitchDebugInfo?.() || null,
+  getBowlingAIState: () => bowlingAI?.getDiagnostics?.() || null,
+  getDeliveryTelemetry: () => deliveryTelemetry.slice()
 };
 
 initApp();
