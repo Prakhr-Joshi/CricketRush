@@ -1016,9 +1016,16 @@ function initApp() {
   gameContainer.addEventListener("pointerup", handlePointerUp);
   gameContainer.addEventListener("pointercancel", handlePointerUp);
 
-  // Register Service Worker if supported
+  // Unregister any legacy service workers so stale multi-mode caches never persist
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(reg => reg.unregister());
+    }).catch(() => {});
+  }
+  if ("caches" in window) {
+    caches.keys().then(keys => {
+      keys.forEach(k => caches.delete(k));
+    }).catch(() => {});
   }
 
   // Initialize default state
