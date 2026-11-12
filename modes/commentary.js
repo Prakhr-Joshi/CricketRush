@@ -116,28 +116,41 @@ class CommentaryEngine {
     } catch (e) {}
   }
 
+  getAudioCtx() {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    if (!window._sfxCtx) window._sfxCtx = new AudioCtx();
+    const ctx = window._sfxCtx;
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    return ctx;
+  }
+
+  getCheerBuffer(ctx, duration) {
+    if (!this._cheerBuffers) this._cheerBuffers = new Map();
+    if (this._cheerBuffers.has(duration)) return this._cheerBuffers.get(duration);
+    const bufferSize = Math.floor(ctx.sampleRate * duration);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let lastOut = 0.0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      lastOut = (lastOut + 0.02 * white) / 1.02;
+      data[i] = lastOut * 3.0;
+    }
+    this._cheerBuffers.set(duration, buffer);
+    return buffer;
+  }
+
   playCrowdCheer(eventType) {
     if (!this.enabled || this.isMuted()) return;
     try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      if (!this.audioCtx) this.audioCtx = new AudioCtx();
-      const ctx = this.audioCtx;
-      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      const ctx = this.getAudioCtx();
+      if (!ctx) return;
 
       const now = ctx.currentTime;
       if (eventType === "six" || eventType === "four" || eventType === "win") {
         const duration = eventType === "six" || eventType === "win" ? 1.8 : 1.1;
-        const bufferSize = Math.floor(ctx.sampleRate * duration);
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        let lastOut = 0.0;
-        for (let i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1;
-          data[i] = (lastOut + 0.02 * white) / 1.02;
-          lastOut = data[i];
-          data[i] *= 3.0;
-        }
+        const buffer = this.getCheerBuffer(ctx, duration);
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
         const filter = ctx.createBiquadFilter();

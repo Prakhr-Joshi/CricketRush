@@ -543,6 +543,13 @@ async function startChaseMatch(config) {
   };
 
   showScreen("game");
+  if (!isSoundMuted()) {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx && !window._sfxCtx) window._sfxCtx = new AudioCtx();
+      if (window._sfxCtx?.state === "suspended") window._sfxCtx.resume().catch(() => {});
+    } catch {}
+  }
   updateChaseHud(0, 0, 0);
   setLoadingVisible(true, `Chasing ${activeConfig.target} in ${activeConfig.balls} ball${activeConfig.balls === 1 ? "" : "s"}`);
   updateLoadingProgress(15, "Setting up 3D stadium & pitch...");

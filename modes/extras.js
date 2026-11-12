@@ -329,6 +329,10 @@ window.settingsManager = new SettingsManager();
 
 window.triggerConfetti = function(colors = ["#ffcf66", "#ff7b35", "#22c55e", "#38bdf8", "#ec4899", "#ffffff"]) {
   try {
+    if (window._confettiRafId) {
+      cancelAnimationFrame(window._confettiRafId);
+      window._confettiRafId = null;
+    }
     let canvas = document.getElementById("vfx-confetti-canvas");
     if (!canvas) {
       canvas = document.createElement("canvas");
@@ -343,9 +347,12 @@ window.triggerConfetti = function(colors = ["#ffcf66", "#ff7b35", "#22c55e", "#3
     }
 
     const ctx = canvas.getContext("2d");
-    const width = (canvas.width = window.innerWidth);
-    const height = (canvas.height = window.innerHeight);
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
 
+    const DEG2RAD = Math.PI / 180;
     const particles = [];
     for (let i = 0; i < 75; i++) {
       particles.push({
@@ -363,10 +370,13 @@ window.triggerConfetti = function(colors = ["#ffcf66", "#ff7b35", "#22c55e", "#3
     }
 
     const tick = () => {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
       ctx.clearRect(0, 0, width, height);
       let alive = 0;
 
-      for (const p of particles) {
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
         if (p.life <= 0) continue;
         alive++;
         p.x += p.vx;
@@ -376,22 +386,26 @@ window.triggerConfetti = function(colors = ["#ffcf66", "#ff7b35", "#22c55e", "#3
         p.rotation += p.rotSpeed;
         p.life -= p.decay;
 
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate((p.rotation * Math.PI) / 180);
-        ctx.globalAlpha = Math.max(0, p.life);
+        const rad = p.rotation * DEG2RAD;
+        const c = Math.cos(rad);
+        const s = Math.sin(rad);
+        ctx.setTransform(c, s, -s, c, p.x, p.y);
+        ctx.globalAlpha = p.life > 0 ? p.life : 0;
         ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
-        ctx.restore();
+        ctx.fillRect(-p.size * 0.5, -p.size * 0.25, p.size, p.size * 0.5);
       }
 
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+
       if (alive > 0) {
-        requestAnimationFrame(tick);
-      } else if (canvas.parentNode) {
-        canvas.parentNode.removeChild(canvas);
+        window._confettiRafId = requestAnimationFrame(tick);
+      } else {
+        window._confettiRafId = null;
+        if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
       }
     };
-    requestAnimationFrame(tick);
+    window._confettiRafId = requestAnimationFrame(tick);
   } catch (e) {
     console.warn("Confetti effect failed:", e);
   }
