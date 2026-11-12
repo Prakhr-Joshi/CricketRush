@@ -47,6 +47,9 @@
             <button class="primary-button play-chase-cta" id="btn-play-chase" type="button">
               <span>▶ PLAY CHASE</span>
             </button>
+            <button class="secondary-button play-test-cta" id="btn-play-test" type="button">
+              <span>🏏 TEST MATCH</span>
+            </button>
           </div>
 
           <div class="home-quick-stats" aria-label="Chase Mode Highlights">
@@ -147,14 +150,6 @@
                 <span class="preset-name">Hard</span>
                 <span class="preset-meta">100 runs · 30 balls</span>
               </button>
-              <button class="preset-btn" data-preset="expert" data-target="100" data-balls="12" type="button">
-                <span class="preset-name">Expert</span>
-                <span class="preset-meta">100 runs · 12 balls</span>
-              </button>
-              <button class="preset-btn" data-preset="extreme" data-target="200" data-balls="24" type="button">
-                <span class="preset-name">Extreme</span>
-                <span class="preset-meta">200 runs · 24 balls</span>
-              </button>
             </div>
           </div>
 
@@ -213,6 +208,106 @@
     </section>
 
     <!-- ================================================================
+         2B. TEST MATCH SETUP SCREEN
+         ================================================================ -->
+    <section class="setup-screen test-setup-screen hidden" id="test-setup-screen" aria-label="Test Match Setup">
+      <div class="setup-shell test-setup-shell">
+        <div class="setup-top-row">
+          <button class="back-btn" id="btn-test-setup-back" type="button">← Back</button>
+          <span class="badge test-badge">FIVE-DAY TEST CRICKET</span>
+        </div>
+
+        <article class="setup-card test-setup-card">
+          <div class="test-setup-header">
+            <h1 class="setup-title">TEST MATCH SERIES</h1>
+            <p class="setup-subtitle">Two innings per side · Red ball · Wearing pitch · Follow-on &amp; declarations</p>
+          </div>
+
+          <!-- Broadcast VS Face-Off Banner -->
+          <div class="test-vs-banner" id="test-vs-banner" aria-label="Selected Matchup">
+            <div class="test-vs-side is-home" id="test-vs-home">
+              <div class="test-vs-crest" id="test-vs-home-crest"></div>
+              <div class="test-vs-info">
+                <span class="test-vs-tag">YOUR XI · WHITES</span>
+                <strong class="test-vs-name" id="test-vs-home-name">Punjab Pulse</strong>
+              </div>
+            </div>
+            <div class="test-vs-center">
+              <span class="test-vs-pill">VS</span>
+              <span class="test-vs-meta" id="test-vs-meta">5-Day · Balanced</span>
+            </div>
+            <div class="test-vs-side is-away" id="test-vs-away">
+              <div class="test-vs-info">
+                <span class="test-vs-tag">OPPONENT XI</span>
+                <strong class="test-vs-name" id="test-vs-away-name">Jaipur Jets</strong>
+              </div>
+              <div class="test-vs-crest" id="test-vs-away-crest"></div>
+            </div>
+          </div>
+
+          <!-- Team Selection Cards -->
+          <div class="test-teams-grid">
+            <div class="test-team-picker">
+              <span class="setup-label">SELECT YOUR TEAM</span>
+              <div class="test-team-cards" id="test-user-team-grid"></div>
+            </div>
+            <div class="test-team-picker">
+              <span class="setup-label">SELECT OPPONENT</span>
+              <div class="test-team-cards" id="test-ai-team-grid"></div>
+            </div>
+          </div>
+
+          <!-- Match Format, Difficulty, Pitch & Toss -->
+          <div class="setup-options-row">
+            <div class="setup-block">
+              <span class="setup-label">MATCH DURATION</span>
+              <div class="setup-pill-row" id="test-duration-pills">
+                <button class="setup-pill setup-diff-pill active" data-days="5" type="button">5-Day Test (450 ov)</button>
+                <button class="setup-pill setup-diff-pill" data-days="3" type="button">3-Day Test (270 ov)</button>
+              </div>
+            </div>
+            <div class="setup-block">
+              <span class="setup-label">BOWLING DIFFICULTY</span>
+              <div class="setup-pill-row" id="test-diff-pills">
+                <button class="setup-pill setup-diff-pill" data-diff="Easy" type="button">Easy</button>
+                <button class="setup-pill setup-diff-pill active" data-diff="Medium" type="button">Medium</button>
+                <button class="setup-pill setup-diff-pill" data-diff="Hard" type="button">Hard</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setup-options-row">
+            <div class="setup-block">
+              <span class="setup-label">PITCH CONDITION</span>
+              <div class="setup-pill-row" id="test-pitch-pills">
+                <button class="setup-pill setup-diff-pill active" data-pitch="balanced" type="button">Balanced</button>
+                <button class="setup-pill setup-diff-pill" data-pitch="green" type="button">Green Seamer</button>
+                <button class="setup-pill setup-diff-pill" data-pitch="dusty" type="button">Dusty Turner</button>
+              </div>
+            </div>
+            <div class="setup-block">
+              <span class="setup-label">TOSS &amp; WEATHER</span>
+              <div class="setup-pill-row" id="test-toss-pills">
+                <button class="setup-pill setup-diff-pill active" data-batfirst="true" type="button">Bat First</button>
+                <button class="setup-pill setup-diff-pill" data-batfirst="false" type="button">Bowl First</button>
+              </div>
+              <label class="test-rain-toggle">
+                <input type="checkbox" id="test-rain-checkbox">
+                <span>Enable Weather / Rain Interruptions</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setup-actions">
+            <button class="primary-button start-test-btn" id="btn-start-test" type="button">
+              🏏 START TEST MATCH
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================================================================
          3. GAMEPLAY SCREEN (Live Scoreboard + 3D Stadium Arena)
          ================================================================ -->
     <section class="game-screen hidden" id="game-screen" aria-label="Cricket Rush Match">
@@ -257,6 +352,48 @@
         </div>
       </header>
 
+      <!-- Traditional Test Match Scoreboard Bar -->
+      <header class="chase-hud test-hud hidden" id="test-hud" aria-label="Live Test Match Scoreboard">
+        <div class="chase-hud-metrics">
+          <div class="hud-chip test-day-chip">
+            <span class="hud-lbl" id="test-hud-day-lbl">DAY 1 · MORNING</span>
+            <strong class="hud-val" id="test-hud-innings">INN 1/4</strong>
+          </div>
+          <div class="hud-chip hud-chip-score">
+            <span class="hud-lbl" id="test-hud-team-lbl">IND</span>
+            <strong class="hud-val" id="test-hud-score">0/0 (0.0)</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">SITUATION</span>
+            <strong class="hud-val test-sit-val" id="test-hud-situation">1st Innings</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">PARTNERSHIP</span>
+            <strong class="hud-val" id="test-hud-partnership">0 (0)</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">BATTERS</span>
+            <strong class="hud-val test-batters-val" id="test-hud-batters">0* · 0</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl" id="test-hud-bowler-lbl">BOWLER</span>
+            <strong class="hud-val" id="test-hud-bowler">0-0 (0.0)</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-lbl">BALL AGE</span>
+            <strong class="hud-val" id="test-hud-ball-age">0.0 ov</strong>
+          </div>
+        </div>
+        <div class="chase-hud-controls test-hud-actions">
+          <button class="game-icon-btn test-action-btn hidden" id="btn-test-new-ball" type="button" title="Take New Ball">🔴 New Ball</button>
+          <button class="game-icon-btn test-action-btn" id="btn-test-declare" type="button" title="Declare Innings">Declare</button>
+          <button class="game-icon-btn test-action-btn hidden" id="btn-test-sim-ai" type="button" title="Simulate Opponent Innings">⏩ Sim AI</button>
+          <button class="game-icon-btn" id="btn-test-scorecard" type="button" title="Test Scorecard">📋</button>
+          <button class="game-icon-btn" id="btn-test-sound" type="button" title="Toggle Sound">🔊</button>
+          <button class="game-icon-btn" id="btn-test-pause" type="button" title="Pause Match">⏸</button>
+        </div>
+      </header>
+
       <div class="arena-layout">
         <div class="arena-shell">
           <div class="game-container" id="game-container"></div>
@@ -268,6 +405,15 @@
           <div class="live-commentary-ticker hidden" id="live-commentary-ticker">
             <span class="comm-mic">🎙️</span>
             <span class="comm-text" id="live-commentary-text"></span>
+          </div>
+
+          <!-- Test Match Shot Intent Controls (Defend / Normal / Attack / Leave) -->
+          <div class="test-intent-bar hidden" id="test-intent-bar" aria-label="Test Batting Intent">
+            <button class="test-intent-btn" data-intent="defend" type="button" title="Defensive Block (Q / Shift)">🛡️ Defend</button>
+            <button class="test-intent-btn active" data-intent="normal" type="button" title="Controlled Stroke (E)">🏏 Normal</button>
+            <button class="test-intent-btn" data-intent="attack" type="button" title="Lofted / Attacking Shot (R)">💥 Attack</button>
+            <button class="test-intent-btn test-leave-btn" id="btn-test-leave" type="button" title="Leave Delivery (L or don't swing)">👀 Leave</button>
+            <span class="test-mental-pill" id="test-mental-pill">Conf 50% · Conc 100%</span>
           </div>
 
           <p class="canvas-controls-hint" id="hud-controls-hint">
@@ -469,12 +615,39 @@
         </div>
       </div>
     </div>
+    <!-- ================================================================
+         9. TEST MATCH FOLLOW-ON DECISION MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="test-followon-modal" role="dialog" aria-modal="true" aria-label="Follow-On Decision">
+      <div class="custom-modal-card">
+        <h2 class="custom-modal-title">⚖️ FOLLOW-ON AVAILABLE</h2>
+        <p class="custom-modal-body" id="test-followon-body">You lead by 200+ runs. Enforce the follow-on?</p>
+        <div class="custom-modal-actions">
+          <button class="secondary-button" id="btn-decline-followon" type="button" style="flex: 1;">Bat Again</button>
+          <button class="primary-button" id="btn-enforce-followon" type="button" style="flex: 1;">Enforce Follow-On</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         10. TEST MATCH SCORECARD MODAL
+         ================================================================ -->
+    <div class="custom-modal-backdrop hidden" id="test-scorecard-modal" role="dialog" aria-modal="true" aria-label="Test Match Scorecard">
+      <div class="custom-modal-card test-scorecard-card">
+        <h2 class="custom-modal-title">📋 TEST MATCH SCORECARD</h2>
+        <div class="test-scorecard-body" id="test-scorecard-body"></div>
+        <div class="custom-modal-actions" style="margin-top: 10px;">
+          <button class="primary-button" id="btn-close-test-scorecard" type="button" style="width: 100%;">CLOSE</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="engine-v2/dist/engine.js"></script>
   <script src="modes/extras.js?v=6.1"></script>
   <script src="modes/commentary.js?v=6.1"></script>
   <script src="modes/bowlingAI.js?v=6.1"></script>
+  <script src="modes/testMatch.js?v=6.1"></script>
   <script type="module" src="game.js?v=6.1"></script>
 </body>
 </html>

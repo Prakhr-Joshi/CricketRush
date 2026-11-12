@@ -17,9 +17,7 @@ const MAX_WICKETS = 10;
 const PRESETS = {
   easy: { target: 20, balls: 30 },
   medium: { target: 50, balls: 30 },
-  hard: { target: 100, balls: 30 },
-  expert: { target: 100, balls: 12 },
-  extreme: { target: 200, balls: 24 }
+  hard: { target: 100, balls: 30 }
 };
 
 const LEAGUE_TEAMS = [
@@ -104,6 +102,7 @@ const LEAGUE_TEAMS = [
 // ── DOM References ──
 const homeScreen = document.getElementById("home-screen");
 const setupScreen = document.getElementById("setup-screen");
+const testSetupScreen = document.getElementById("test-setup-screen");
 const gameScreen = document.getElementById("game-screen");
 
 const targetInput = document.getElementById("input-target-runs");
@@ -158,6 +157,17 @@ let lastScore = 0;
 let lastWickets = 0;
 let wicketOnCurrentBall = false;
 let lastHudSnapshot = null;
+let activeMode = "chase";
+let testMatchController = null;
+let testConfig = {
+  days: 5,
+  difficulty: "Medium",
+  pitch: "balanced",
+  rainEnabled: false,
+  batFirst: true,
+  userTeamIdx: 0,
+  aiTeamIdx: 1
+};
 
 // ── Viewport Height Helper (Mobile Soft-Keyboard / Dynamic Viewport) ──
 function syncViewportHeight() {
@@ -209,8 +219,10 @@ function syncSoundButtons() {
   const muted = isSoundMuted();
   const homeBtn = document.getElementById("btn-home-sound");
   const hudBtn = document.getElementById("btn-hud-sound");
+  const testHudBtn = document.getElementById("btn-test-sound");
   if (homeBtn) homeBtn.textContent = muted ? "🔇 Muted" : "🔊 Sound";
   if (hudBtn) hudBtn.textContent = muted ? "🔇" : "🔊";
+  if (testHudBtn) testHudBtn.textContent = muted ? "🔇" : "🔊";
 }
 
 function playSynthesizedSFX(type) {
@@ -314,6 +326,7 @@ function showScreen(name) {
   currentScreen = name;
   homeScreen.classList.toggle("hidden", name !== "home");
   setupScreen.classList.toggle("hidden", name !== "setup");
+  testSetupScreen?.classList.toggle("hidden", name !== "test-setup");
   gameScreen.classList.toggle("hidden", name !== "game");
 
   if (name === "home") {
@@ -425,7 +438,7 @@ const DIFFICULTY_DESCRIPTIONS = {
 };
 
 function syncOptionPills() {
-  document.querySelectorAll(".setup-diff-pill").forEach(pill => {
+  document.querySelectorAll("#setup-screen .setup-diff-pill").forEach(pill => {
     pill.classList.toggle("active", pill.dataset.diff === selectedDifficulty);
   });
   document.querySelectorAll(".setting-quality-pill").forEach(pill => {
@@ -478,6 +491,11 @@ function destroyActiveGame() {
   pauseModal.classList.add("hidden");
   resultModal.classList.add("hidden");
   document.getElementById("settings-modal")?.classList.add("hidden");
+  document.getElementById("test-followon-modal")?.classList.add("hidden");
+  document.getElementById("test-scorecard-modal")?.classList.add("hidden");
+  document.getElementById("test-hud")?.classList.add("hidden");
+  document.getElementById("test-intent-bar")?.classList.add("hidden");
+  document.getElementById("chase-hud")?.classList.remove("hidden");
   setLoadingVisible(false);
   window.commentaryEngine?.hideTicker?.();
   celebrationLayer.replaceChildren();
@@ -494,6 +512,7 @@ function destroyActiveGame() {
   ballLog = [];
   deliveryTelemetry = [];
   bowlingAI = null;
+  testMatchController = null;
   lastLegalBalls = 0;
   lastScore = 0;
   lastWickets = 0;
@@ -533,6 +552,7 @@ async function startChaseMatch(config) {
   }
 
   destroyActiveGame();
+  activeMode = "chase";
   isStarting = true;
 
   activeConfig = {
@@ -811,6 +831,429 @@ function handleMatchEnd(result) {
   resultModal.classList.remove("hidden");
 }
 
+// ── Test Match Mode Controller & Presentation ──
+function setTestIntent(intent) {
+  if (!testMatchController) return;
+  testMatchController.setShotIntent(intent);
+  if (gameInstance?.data) {
+    gameInstance.data.testShotIntent = intent;
+    testMatchController.applyEngineConditions(gameInstance.data);
+  }
+  document.getElementById("btn-test-leave")?.classList.remove("active");
+  document.querySelectorAll("#test-intent-bar .test-intent-btn[data-intent]").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.intent === intent);
+  });
+}
+
+function updateTestHud() {
+  if (!testMatchController || activeMode !== "test") return;
+  const snap = testMatchController.getSnapshot();
+  const inn = snap.currentInnings;
+  if (!inn) return;
+
+  const dayEl = document.getElementById("test-hud-day-lbl");
+  const innEl = document.getElementById("test-hud-innings");
+  const teamEl = document.getElementById("test-hud-team-lbl");
+  const scoreEl = document.getElementById("test-hud-score");
+  const sitEl = document.getElementById("test-hud-situation");
+  const partEl = document.getElementById("test-hud-partnership");
+  const batEl = document.getElementById("test-hud-batters");
+  const bowlLbl = document.getElementById("test-hud-bowler-lbl");
+  const bowlEl = document.getElementById("test-hud-bowler");
+  const ballAgeEl = document.getElementById("test-hud-ball-age");
+  const declareBtn = document.getElementById("btn-test-declare");
+  const newBallBtn = document.getElementById("btn-test-new-ball");
+  const simAiBtn = document.getElementById("btn-test-sim-ai");
+
+  if (dayEl) dayEl.textContent = `DAY ${snap.day} · ${snap.session.toUpperCase()}`;
+  if (innEl) innEl.textContent = `INN ${inn.number}/4`;
+  if (teamEl) teamEl.textContent = `${inn.battingShort}${inn.battingSide === "user" ? " (YOU)" : " (AI)"}`;
+  if (scoreEl) scoreEl.textContent = `${inn.runs}/${inn.wickets} (${inn.overs})`;
+  if (sitEl) sitEl.textContent = snap.situationText;
+  if (partEl) partEl.textContent = `${inn.partnership.runs} (${inn.partnership.balls})`;
+  if (batEl && inn.striker && inn.nonStriker) {
+    batEl.textContent = `${inn.striker.name.split(" ").pop()} ${inn.striker.runs}* · ${inn.nonStriker.name.split(" ").pop()} ${inn.nonStriker.runs}`;
+  }
+  if (bowlLbl && inn.bowler) bowlLbl.textContent = inn.bowler.name.split(" ").pop().toUpperCase();
+  if (bowlEl && inn.bowler) bowlEl.textContent = `${inn.bowler.wickets}-${inn.bowler.runs} (${inn.bowler.overs})`;
+  if (ballAgeEl) ballAgeEl.textContent = `${snap.ballAgeOvers.toFixed(1)} ov`;
+
+  if (declareBtn) declareBtn.classList.toggle("hidden", !testMatchController.canDeclare() || inn.battingSide !== "user");
+  if (newBallBtn) newBallBtn.classList.toggle("hidden", !snap.newBallAvailable);
+  if (simAiBtn) simAiBtn.classList.toggle("hidden", inn.battingSide !== "ai" || snap.matchEnded);
+
+  const mentalEl = document.getElementById("test-mental-pill");
+  if (mentalEl) {
+    const shotStr = snap.lastShotInfo?.shotName && snap.lastShotInfo.shotName !== "Ready"
+      ? ` · ${snap.lastShotInfo.shotName} (${snap.lastShotInfo.timing})`
+      : "";
+    mentalEl.textContent = `Conf ${snap.confidence}% · Conc ${snap.concentration}%${shotStr}`;
+  }
+}
+
+function armTestLeave() {
+  if (!testMatchController || activeMode !== "test") return;
+  testMatchController.armLeave();
+  document.getElementById("btn-test-leave")?.classList.add("active");
+  showShotFeedback("👀 LEAVE ARMED — Hold Space", "four");
+  updateTestHud();
+}
+
+function renderTestScorecard() {
+  if (!testMatchController) return;
+  const body = document.getElementById("test-scorecard-body");
+  if (!body) return;
+  body.replaceChildren();
+
+  testMatchController.innings.forEach(inn => {
+    const card = document.createElement("div");
+    card.className = "test-sc-inn";
+    const hdr = document.createElement("div");
+    hdr.className = "test-sc-hdr";
+    const statusTag = inn.declared ? " dec" : inn.allOut ? " all out" : "";
+    hdr.innerHTML = `<span>Innings ${inn.number}: ${inn.battingTeamName}</span><span>${inn.runs}/${inn.wickets}${statusTag} (${Math.floor(inn.balls / 6)}.${inn.balls % 6} ov)</span>`;
+    card.appendChild(hdr);
+
+    const batHdr = document.createElement("div");
+    batHdr.className = "test-sc-subhdr";
+    batHdr.textContent = "Batting";
+    card.appendChild(batHdr);
+
+    inn.batters.filter(b => b.balls > 0 || b.out || inn.batters.indexOf(b) === inn.strikerIdx || inn.batters.indexOf(b) === inn.nonStrikerIdx).forEach(b => {
+      const sr = b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : "0.0";
+      const row = document.createElement("div");
+      row.className = "test-sc-row";
+      row.innerHTML = `<span>${b.name} <small style="color:var(--muted)">(${b.dismissal})</small></span><span><b>${b.runs}</b> (${b.balls}b · ${b.fours}×4 · ${b.sixes}×6 · SR ${sr})</span>`;
+      card.appendChild(row);
+    });
+
+    const extRow = document.createElement("div");
+    extRow.className = "test-sc-row";
+    extRow.innerHTML = `<span>Extras (wd ${inn.extras.wides}, nb ${inn.extras.noballs}, b ${inn.extras.byes}, lb ${inn.extras.legbyes})</span><span><b>${inn.extras.total}</b></span>`;
+    card.appendChild(extRow);
+
+    const activeBowlers = inn.bowlers.filter(bw => bw.balls > 0);
+    if (activeBowlers.length > 0) {
+      const bowlHdr = document.createElement("div");
+      bowlHdr.className = "test-sc-subhdr";
+      bowlHdr.textContent = "Bowling";
+      card.appendChild(bowlHdr);
+      activeBowlers.forEach(bw => {
+        const ov = `${Math.floor(bw.balls / 6)}.${bw.balls % 6}`;
+        const econ = bw.balls > 0 ? (bw.runs / (bw.balls / 6)).toFixed(2) : "0.00";
+        const row = document.createElement("div");
+        row.className = "test-sc-row";
+        row.innerHTML = `<span>${bw.name} <small style="color:var(--muted)">(${bw.role})</small></span><span>${ov}-${bw.maidens}-${bw.runs}-<b>${bw.wickets}</b> <small style="color:var(--muted)">(Econ ${econ})</small></span>`;
+        card.appendChild(row);
+      });
+    }
+
+    if (inn.fallOfWickets.length > 0) {
+      const fow = document.createElement("div");
+      fow.className = "test-sc-fow";
+      fow.textContent = "FoW: " + inn.fallOfWickets.map(f => `${f.wicket}-${f.score} (${f.batter.split(" ").pop()}, ${f.overs})`).join(" · ");
+      card.appendChild(fow);
+    }
+
+    body.appendChild(card);
+  });
+}
+
+function showTestMatchResult(result, snap) {
+  if (matchEnded) return;
+  matchEnded = true;
+  if (gameInstance) gameInstance.pause?.();
+
+  const badge = document.getElementById("res-badge");
+  const icon = document.getElementById("res-icon");
+  const headline = document.getElementById("res-headline");
+  const subtitle = document.getElementById("res-subtitle");
+  const userWon = result.winner === "user";
+  const isDrawOrTie = result.type === "draw" || result.type === "tie";
+
+  if (badge) {
+    badge.className = "result-badge " + (userWon ? "is-victory" : isDrawOrTie ? "is-allout" : "is-defeat");
+    badge.textContent = result.type === "draw" ? "DRAW" : result.type === "tie" ? "TIE" : userWon ? "TEST VICTORY" : "DEFEAT";
+  }
+  if (icon) icon.textContent = userWon ? "🏆" : isDrawOrTie ? "🤝" : "🏏";
+  if (headline) headline.textContent = result.headline;
+  if (subtitle) subtitle.textContent = result.subtitle;
+
+  const inn = snap.currentInnings;
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setText("res-final-score", inn ? `${inn.battingShort} ${inn.runs}/${inn.wickets}` : "—");
+  setText("res-target", `${snap.day} Days`);
+  setText("res-balls-faced", `${snap.oversElapsed} ov`);
+  setText("res-wickets-lost", `${inn?.wickets ?? 0} / 10`);
+  setText("res-runs-per-ball", snap.inningsSummaries.map(i => `${i.battingShort} ${i.runs}/${i.wickets}`).join(" · "));
+  setText("res-run-rate", snap.pitchType);
+
+  const logContainer = document.getElementById("res-ball-log");
+  if (logContainer) {
+    logContainer.replaceChildren();
+    snap.inningsSummaries.forEach(s => {
+      const chip = document.createElement("span");
+      chip.className = "ball-chip";
+      chip.textContent = `${s.battingShort} ${s.runs}/${s.wickets}`;
+      logContainer.appendChild(chip);
+    });
+  }
+
+  if (userWon) playSynthesizedSFX("win");
+  resultModal.classList.remove("hidden");
+}
+
+function startEngineInningsForTest(instance) {
+  const Engine = window.CricketRushEngine;
+  if (!Engine || !instance || !testMatchController) return;
+  const inn = testMatchController.currentInnings;
+  if (!inn) return;
+
+  const batTeam = inn.battingSide === "user" ? testMatchController.userTeam : testMatchController.aiTeam;
+  const bowlTeam = inn.bowlingSide === "user" ? testMatchController.userTeam : testMatchController.aiTeam;
+  testMatchController.applyEngineConditions(instance.data);
+
+  const diffKey = String(testMatchController.difficulty || "medium").toLowerCase();
+  const skillLevel =
+    diffKey === "easy"
+      ? Engine.PlayerSkillLevel.BEGINNER
+      : diffKey === "hard"
+      ? Engine.PlayerSkillLevel.PRO
+      : Engine.PlayerSkillLevel.CLUB;
+
+  instance.startInnings({
+    type: Engine.InningsType.FIRST_INNINGS,
+    format: "full-match",
+    totalOvers: 9999,
+    playerSkillLevel: skillLevel,
+    battingTeam: toEngineTeam(batTeam),
+    bowlingTeam: toEngineTeam(bowlTeam)
+  });
+  instance.setStadiumTheme?.("day");
+  instance.setKitColors?.("#f8fafc", "#f1f5f9");
+  instance.setScorecardTeam?.(batTeam.shortName, batTeam.kitHex);
+  testMatchController.applyEngineConditions(instance.data);
+  updateTestHud();
+}
+
+async function startTestMatch(config = testConfig) {
+  if (isStarting) return;
+  if (!window.CricketRushEngine || !window.TestMatchController) {
+    alert("Test Match engine failed to load. Please refresh the page.");
+    return;
+  }
+
+  destroyActiveGame();
+  activeMode = "test";
+  isStarting = true;
+
+  const userTeam = LEAGUE_TEAMS[config.userTeamIdx] || LEAGUE_TEAMS[0];
+  const aiTeam = LEAGUE_TEAMS[config.aiTeamIdx] || LEAGUE_TEAMS[1];
+
+  testMatchController = new window.TestMatchController({
+    days: config.days,
+    difficulty: config.difficulty,
+    pitch: config.pitch,
+    rainEnabled: config.rainEnabled,
+    userBatsFirst: config.batFirst,
+    userTeam,
+    aiTeam,
+    callbacks: {
+      onNotification: msg => {
+        showShotFeedback(msg, "four");
+        window.commentaryEngine?.displayTicker?.(msg, "info");
+      },
+      onFollowOnPrompt: info => {
+        if (gameInstance) gameInstance.pause?.();
+        const body = document.getElementById("test-followon-body");
+        if (body) {
+          body.textContent = `${info.battingTeam} lead ${info.chasingTeam} by ${info.lead} runs (threshold ${info.threshold}). Enforce the follow-on?`;
+        }
+        document.getElementById("test-followon-modal")?.classList.remove("hidden");
+      },
+      onMatchEnd: (result, snap) => showTestMatchResult(result, snap)
+    }
+  });
+
+  showScreen("game");
+  document.getElementById("chase-hud")?.classList.add("hidden");
+  document.getElementById("test-hud")?.classList.remove("hidden");
+  document.getElementById("test-intent-bar")?.classList.remove("hidden");
+
+  if (!isSoundMuted()) {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx && !window._sfxCtx) window._sfxCtx = new AudioCtx();
+      if (window._sfxCtx?.state === "suspended") window._sfxCtx.resume().catch(() => {});
+    } catch {}
+  }
+
+  setLoadingVisible(true, `${config.days}-Day Test: ${userTeam.shortName} vs ${aiTeam.shortName}`);
+  updateLoadingProgress(20, "Preparing red-ball pitch & Test whites...");
+
+  const Engine = window.CricketRushEngine;
+  const use3d = selectedQuality !== "low";
+  const maxDpr = selectedQuality === "low" ? 0.75 : selectedQuality === "high" ? 1.5 : 1.0;
+  const maxFps = selectedQuality === "low" ? 30 : 60;
+
+  let lastTestScore = 0;
+  let lastTestBalls = 0;
+  let testWicketLabel = "";
+  let currentInningsNum = 1;
+  let instance = null;
+
+  try {
+    instance = new Engine.CricketGame(
+      gameContainer,
+      {
+        onHudUpdate: hud => {
+          if (instance !== gameInstance || matchEnded || !testMatchController) return;
+          if (hud.balls === lastTestBalls && hud.score > lastTestScore) {
+            const extraRuns = hud.score - lastTestScore;
+            testMatchController.recordDelivery({ runs: extraRuns, isWide: true });
+            updateTestHud();
+          }
+          lastTestScore = hud.score;
+          lastTestBalls = hud.balls;
+        },
+        onBoundary: runs => {
+          if (instance !== gameInstance || matchEnded) return;
+          const isSix = runs === 6;
+          triggerHaptic(isSix ? "six" : "four");
+          showShotFeedback(isSix ? "🚀 SIX! OVER THE ROPE" : "🏏 FOUR! CLASSY BOUNDARY", isSix ? "six" : "four");
+          window.commentaryEngine?.say(isSix ? "six" : "four");
+        },
+        onWicket: (batter, howCode) => {
+          if (instance !== gameInstance || matchEnded) return;
+          wicketOnCurrentBall = true;
+          const DISMISSAL_LABELS = { 0: "b", 1: "run out", 2: "c & b", 3: "lbw" };
+          testWicketLabel = typeof howCode === "number" ? (DISMISSAL_LABELS[howCode] || "out") : (howCode || "out");
+          triggerHaptic("wicket");
+          showShotFeedback(`💥 WICKET! (${testWicketLabel.toUpperCase()})`, "wicket");
+          window.commentaryEngine?.say("wicket");
+        },
+        onShotContact: (data, reading) => {
+          if (instance !== gameInstance || matchEnded || !testMatchController) return;
+          const isEdge = data.shotEdge && data.shotEdge !== "none";
+          const isMiss = data.contactOutcome === "miss";
+          testMatchController.recordShotFeedback({
+            shotName: data.shotName,
+            shotFamily: data.shotFamily,
+            timingGrade: data.shotGrade,
+            runs: reading?.runs || 0,
+            isEdge,
+            isMiss
+          });
+          if (data.shotFamily === "defense" && !isEdge) {
+            showShotFeedback(`🛡️ ${data.shotName} · ${data.shotGrade || "Solid"}`, "four");
+          } else if (isEdge) {
+            showShotFeedback(`⚠️ ${data.shotName}!`, "wicket");
+          }
+          updateTestHud();
+        },
+        onMissOrLeave: (hasPlayedShot, deliveryLine, data) => {
+          if (instance !== gameInstance || matchEnded || !testMatchController) return;
+          document.getElementById("btn-test-leave")?.classList.remove("active");
+          if (!hasPlayedShot) {
+            const { goodLeave, info } = testMatchController.judgeLeave(data?.ballX, deliveryLine);
+            showShotFeedback(goodLeave ? "👀 WELL LEFT" : "😬 CLOSE LEAVE!", goodLeave ? "four" : "wicket");
+          } else {
+            testMatchController.recordShotFeedback({
+              shotName: data?.shotName || "Beaten",
+              shotFamily: "miss",
+              timingGrade: "Missed",
+              isMiss: true
+            });
+            showShotFeedback("💨 PLAYED & MISSED", "wicket");
+          }
+          updateTestHud();
+        },
+        onBallComplete: (totalBalls, runsThisBall) => {
+          if (instance !== gameInstance || matchEnded || !testMatchController) return;
+          if (totalBalls <= lastTestBalls && !wicketOnCurrentBall) {
+            return;
+          }
+          lastTestBalls = totalBalls;
+          const wasWicket = wicketOnCurrentBall;
+          wicketOnCurrentBall = false;
+          const prevInnNum = testMatchController.currentInnings?.number;
+          testMatchController.recordDelivery({
+            runs: runsThisBall,
+            isWicket: wasWicket,
+            dismissal: testWicketLabel || "out"
+          });
+          testWicketLabel = "";
+
+          if (!testMatchController.matchEnded && !testMatchController.awaitingFollowOnDecision) {
+            const newInnNum = testMatchController.currentInnings?.number;
+            if (newInnNum && newInnNum !== prevInnNum) {
+              currentInningsNum = newInnNum;
+              lastTestScore = 0;
+              lastTestBalls = 0;
+              startEngineInningsForTest(instance);
+            } else {
+              testMatchController.applyEngineConditions(instance.data);
+            }
+          }
+          updateTestHud();
+        }
+      },
+      !isSoundMuted(),
+      {
+        characters: use3d,
+        maxDpr,
+        maxFps,
+        scorecard: {
+          onPause: () => pauseMatch(),
+          onMute: muted => setSoundMuted(muted),
+          muted: isSoundMuted()
+        }
+      }
+    );
+
+    gameInstance = instance;
+    instance.setStadiumTheme?.("day");
+    instance.setKitColors?.("#f8fafc", "#f1f5f9");
+    instance.setScorecardTeam?.(userTeam.shortName, null);
+    window.settingsManager?.applySettings(false);
+    syncSoundButtons();
+
+    updateLoadingProgress(65, "Attaching Test Bowling AI & slip cordon...");
+    if (typeof window.BowlingAI2 === "function") {
+      bowlingAI = new window.BowlingAI2({
+        difficulty: String(config.difficulty || "medium").toLowerCase(),
+        onDelivery: info => {
+          deliveryTelemetry.push(info);
+          if (deliveryTelemetry.length > 350) deliveryTelemetry.shift();
+        }
+      });
+      bowlingAI.attachToEngine(instance);
+    }
+
+    if (typeof instance.warmup === "function") {
+      await Promise.race([
+        instance.warmup(),
+        new Promise(resolve => setTimeout(resolve, 2500))
+      ]);
+    }
+
+    if (instance !== gameInstance) return;
+    updateLoadingProgress(100, "Players taking the field...");
+
+    startEngineInningsForTest(instance);
+    applyAudioToGame();
+    setTestIntent("normal");
+    setLoadingVisible(false);
+    isStarting = false;
+  } catch (err) {
+    console.error("Failed to start Test Match:", err);
+    setLoadingVisible(false);
+    isStarting = false;
+    destroyActiveGame();
+    showScreen("test-setup");
+  }
+}
+
 // ── Pause / Resume ──
 function pauseMatch() {
   if (!gameInstance || isStarting || matchEnded || isPaused) return;
@@ -872,6 +1315,28 @@ function handleKeyDown(e) {
     e.preventDefault();
     gameInstance?.setStance?.(0);
     return;
+  }
+  if (activeMode === "test") {
+    if (e.code === "KeyQ" || e.code === "ShiftLeft" || e.code === "ShiftRight") {
+      e.preventDefault();
+      setTestIntent("defend");
+      return;
+    }
+    if (e.code === "KeyE") {
+      e.preventDefault();
+      setTestIntent("normal");
+      return;
+    }
+    if (e.code === "KeyR") {
+      e.preventDefault();
+      setTestIntent("attack");
+      return;
+    }
+    if (e.code === "KeyL") {
+      e.preventDefault();
+      armTestLeave();
+      return;
+    }
   }
   if (e.code === "Space" || e.code === "Enter") {
     e.preventDefault();
@@ -951,8 +1416,154 @@ function initApp() {
   document.getElementById("btn-play-chase")?.addEventListener("click", () => {
     showScreen("setup");
   });
+  document.getElementById("btn-play-test")?.addEventListener("click", () => {
+    showScreen("test-setup");
+  });
   document.getElementById("btn-home-sound")?.addEventListener("click", () => {
     setSoundMuted(!isSoundMuted());
+  });
+
+  // Test Match setup wiring
+  document.getElementById("btn-test-setup-back")?.addEventListener("click", () => {
+    showScreen("home");
+  });
+
+  const createTeamCrestSvg = (team, size = 28) => {
+    const c = team.kitHex || "#f8fafc";
+    return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 2 L28 7 V16 C28 23.5 22.5 28.5 16 30 C9.5 28.5 4 23.5 4 16 V7 Z" fill="${c}" fill-opacity="0.24" stroke="${c}" stroke-width="2"/>
+      <text x="16" y="19.5" text-anchor="middle" fill="#f8fafc" font-size="9" font-weight="800" font-family="system-ui,sans-serif">${team.shortName}</text>
+    </svg>`;
+  };
+
+  const syncTestSetupCards = () => {
+    const userTeam = LEAGUE_TEAMS[testConfig.userTeamIdx] || LEAGUE_TEAMS[0];
+    const aiTeam = LEAGUE_TEAMS[testConfig.aiTeamIdx] || LEAGUE_TEAMS[1];
+    const homeCrest = document.getElementById("test-vs-home-crest");
+    const awayCrest = document.getElementById("test-vs-away-crest");
+    const homeName = document.getElementById("test-vs-home-name");
+    const awayName = document.getElementById("test-vs-away-name");
+    const vsMeta = document.getElementById("test-vs-meta");
+    if (homeCrest) homeCrest.innerHTML = createTeamCrestSvg(userTeam, 34);
+    if (awayCrest) awayCrest.innerHTML = createTeamCrestSvg(aiTeam, 34);
+    if (homeName) homeName.textContent = userTeam.name;
+    if (awayName) awayName.textContent = aiTeam.name;
+    const pitchLabel = testConfig.pitch === "green" ? "Green Seamer" : testConfig.pitch === "dusty" ? "Dusty Turner" : "Balanced";
+    if (vsMeta) vsMeta.textContent = `${testConfig.days}-Day · ${pitchLabel} · ${testConfig.difficulty}`;
+
+    document.querySelectorAll("#test-user-team-grid .test-team-card").forEach(btn => {
+      btn.classList.toggle("active", Number(btn.dataset.teamIdx) === testConfig.userTeamIdx);
+    });
+    document.querySelectorAll("#test-ai-team-grid .test-team-card").forEach(btn => {
+      btn.classList.toggle("active", Number(btn.dataset.teamIdx) === testConfig.aiTeamIdx);
+    });
+  };
+
+  const userGrid = document.getElementById("test-user-team-grid");
+  const aiGrid = document.getElementById("test-ai-team-grid");
+  if (userGrid && aiGrid) {
+    LEAGUE_TEAMS.forEach((t, idx) => {
+      const makeCard = (side) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "test-team-card";
+        btn.dataset.teamIdx = String(idx);
+        btn.style.setProperty("--team-accent", t.kitHex);
+        btn.innerHTML = `${createTeamCrestSvg(t, 28)}<span class="test-team-card-code">${t.shortName}</span><span class="test-team-card-name">${t.name}</span>`;
+        btn.addEventListener("click", () => {
+          if (side === "user") {
+            testConfig.userTeamIdx = idx;
+            if (testConfig.aiTeamIdx === idx) testConfig.aiTeamIdx = (idx + 1) % LEAGUE_TEAMS.length;
+          } else {
+            testConfig.aiTeamIdx = idx;
+            if (testConfig.userTeamIdx === idx) testConfig.userTeamIdx = (idx + 1) % LEAGUE_TEAMS.length;
+          }
+          syncTestSetupCards();
+        });
+        return btn;
+      };
+      userGrid.appendChild(makeCard("user"));
+      aiGrid.appendChild(makeCard("ai"));
+    });
+    syncTestSetupCards();
+  }
+
+  const wireTestPills = (containerId, attr, applyFn) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll(".setup-diff-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        container.querySelectorAll(".setup-diff-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        applyFn(pill.dataset[attr]);
+        syncTestSetupCards();
+      });
+    });
+  };
+  wireTestPills("test-duration-pills", "days", val => { testConfig.days = Number(val) === 3 ? 3 : 5; });
+  wireTestPills("test-diff-pills", "diff", val => { testConfig.difficulty = val || "Medium"; });
+  wireTestPills("test-pitch-pills", "pitch", val => { testConfig.pitch = val || "balanced"; });
+  wireTestPills("test-toss-pills", "batfirst", val => { testConfig.batFirst = val !== "false"; });
+
+  document.getElementById("btn-start-test")?.addEventListener("click", () => {
+    const rainEl = document.getElementById("test-rain-checkbox");
+    testConfig.rainEnabled = !!rainEl?.checked;
+    startTestMatch(testConfig);
+  });
+
+  // Test Match HUD & modal controls
+  document.querySelectorAll("#test-intent-bar .test-intent-btn[data-intent]").forEach(btn => {
+    btn.addEventListener("click", () => setTestIntent(btn.dataset.intent));
+  });
+  document.getElementById("btn-test-leave")?.addEventListener("click", armTestLeave);
+  document.getElementById("btn-test-declare")?.addEventListener("click", () => {
+    if (!testMatchController || !testMatchController.declareInnings()) return;
+    if (!testMatchController.matchEnded && !testMatchController.awaitingFollowOnDecision && gameInstance) {
+      startEngineInningsForTest(gameInstance);
+    }
+    updateTestHud();
+  });
+  document.getElementById("btn-test-new-ball")?.addEventListener("click", () => {
+    if (!testMatchController?.takeNewBall()) return;
+    if (gameInstance?.data) testMatchController.applyEngineConditions(gameInstance.data);
+    updateTestHud();
+  });
+  document.getElementById("btn-test-sim-ai")?.addEventListener("click", () => {
+    if (!testMatchController || testMatchController.matchEnded) return;
+    testMatchController.simulateCurrentInnings();
+    if (!testMatchController.matchEnded && !testMatchController.awaitingFollowOnDecision && gameInstance) {
+      startEngineInningsForTest(gameInstance);
+    }
+    updateTestHud();
+  });
+  document.getElementById("btn-test-scorecard")?.addEventListener("click", () => {
+    renderTestScorecard();
+    document.getElementById("test-scorecard-modal")?.classList.remove("hidden");
+  });
+  document.getElementById("btn-close-test-scorecard")?.addEventListener("click", () => {
+    document.getElementById("test-scorecard-modal")?.classList.add("hidden");
+  });
+  document.getElementById("btn-test-sound")?.addEventListener("click", () => {
+    setSoundMuted(!isSoundMuted());
+  });
+  document.getElementById("btn-test-pause")?.addEventListener("click", pauseMatch);
+  document.getElementById("btn-enforce-followon")?.addEventListener("click", () => {
+    document.getElementById("test-followon-modal")?.classList.add("hidden");
+    testMatchController?.applyFollowOnDecision(true);
+    if (gameInstance) {
+      gameInstance.resume?.();
+      startEngineInningsForTest(gameInstance);
+    }
+    updateTestHud();
+  });
+  document.getElementById("btn-decline-followon")?.addEventListener("click", () => {
+    document.getElementById("test-followon-modal")?.classList.add("hidden");
+    testMatchController?.applyFollowOnDecision(false);
+    if (gameInstance) {
+      gameInstance.resume?.();
+      startEngineInningsForTest(gameInstance);
+    }
+    updateTestHud();
   });
 
   // Setup navigation & inputs
@@ -984,7 +1595,7 @@ function initApp() {
     adjustNumericInput(ballsInput, 6, BALLS_MIN, BALLS_MAX);
   });
 
-  document.querySelectorAll(".setup-diff-pill").forEach(pill => {
+  document.querySelectorAll("#setup-screen .setup-diff-pill").forEach(pill => {
     pill.addEventListener("click", () => {
       selectedDifficulty = pill.dataset.diff || "medium";
       localStorage.setItem("cricket-rush:difficulty", selectedDifficulty);
@@ -1011,11 +1622,13 @@ function initApp() {
   // Pause modal actions
   document.getElementById("btn-pause-resume")?.addEventListener("click", resumeMatch);
   document.getElementById("btn-pause-restart")?.addEventListener("click", () => {
-    startChaseMatch({ target: activeConfig.target, balls: activeConfig.balls });
+    if (activeMode === "test") startTestMatch(testConfig);
+    else startChaseMatch({ target: activeConfig.target, balls: activeConfig.balls });
   });
   document.getElementById("btn-pause-setup")?.addEventListener("click", () => {
+    const targetScreen = activeMode === "test" ? "test-setup" : "setup";
     destroyActiveGame();
-    showScreen("setup");
+    showScreen(targetScreen);
   });
   document.getElementById("btn-pause-home")?.addEventListener("click", () => {
     destroyActiveGame();
@@ -1024,11 +1637,13 @@ function initApp() {
 
   // Result modal actions
   document.getElementById("btn-result-retry")?.addEventListener("click", () => {
-    startChaseMatch({ target: activeConfig.target, balls: activeConfig.balls });
+    if (activeMode === "test") startTestMatch(testConfig);
+    else startChaseMatch({ target: activeConfig.target, balls: activeConfig.balls });
   });
   document.getElementById("btn-result-setup")?.addEventListener("click", () => {
+    const targetScreen = activeMode === "test" ? "test-setup" : "setup";
     destroyActiveGame();
-    showScreen("setup");
+    showScreen(targetScreen);
   });
   document.getElementById("btn-result-home")?.addEventListener("click", () => {
     destroyActiveGame();
@@ -1070,8 +1685,11 @@ function initApp() {
 
 // Read-only state inspector for verification
 window.__CRICKET_RUSH__ = {
+  getMode: () => activeMode,
   getScreen: () => currentScreen,
   getConfig: () => ({ ...activeConfig }),
+  getTestMatch: () => testMatchController?.getSnapshot?.() || null,
+  getTestController: () => testMatchController,
   getHud: () => (lastHudSnapshot ? { ...lastHudSnapshot } : null),
   getBallLog: () => ballLog.map(b => ({ ...b })),
   isPaused: () => isPaused,
